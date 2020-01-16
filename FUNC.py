@@ -37,23 +37,43 @@ def length_analysis(lengthscale_file):
     rgb = io.imread(main_lengthscale_file)
     gray = color.rgb2gray(rgb)*float((2**16)-1)
 
-    plt.imshow(gray, cmap='gray')
-    plt.grid()
-    plt.show(block=False)
-
-    print('Approximate diameter range (in pixels) -')
-    extent1 = input('extent1 = ')
-    extent2 = input('extent2 = ')
-
-    radii_range = [int(extent1)/2, int(extent2)/2]
-    radii_range = sorted(radii_range)
-
-    gray_cropped_filter = filters.gaussian(gray)
-    edge_sobel = sobel(gray_cropped_filter)
+    gray_filter = filters.gaussian(gray)
+    edge_sobel = sobel(gray_filter)
     threshold = threshold_otsu(edge_sobel)
     binary = edge_sobel > threshold
 
-    hough_radii = np.arange(int(radii_range[0]), int(radii_range[1]), 1)
+    plt.figure(1)
+    plt.subplot(2,2,1)
+    plt.imshow(gray, cmap='gray')
+    plt.grid()
+    plt.title('Grayscale Image')
+
+    plt.subplot(2,2,2)
+    plt.imshow(gray_filter, cmap='gray')
+    plt.grid()
+    plt.title('Filtered Grayscale Image')
+
+    plt.subplot(2,2,3)
+    plt.imshow(edge_sobel, cmap='gray')
+    plt.grid()
+    plt.title('Edge Sobel Image')
+
+    plt.subplot(2,2,4)
+    plt.imshow(binary, cmap='gray')
+    plt.grid()
+    plt.title('Binary Image')
+    plt.show(block=False)
+
+    print('Approximate extents of diameter (in pixels) -')
+    left_extents = np.array(input('left extents = ').split(',')).astype('int')
+    right_extents = np.array(input('right extents = ').split(',')).astype('int')
+    top_extents = np.array(input('top extents = ').split(',')).astype('int')
+    bottom_extents = np.array(input('bottom extents = ').split(',')).astype('int')
+
+    diameter_minimum_value = np.mean([min(right_extents)-max(left_extents), min(bottom_extents)-max(top_extents)])
+    diameter_maximum_value = np.mean([max(right_extents)-min(left_extents), max(bottom_extents)-min(top_extents)])
+
+    hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
     hough_res = hough_circle(binary, hough_radii)
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
@@ -65,9 +85,12 @@ def length_analysis(lengthscale_file):
     length_pixels = int(diameter_pixels)
     px_microns = round((1000.0*length_scale_mm)/length_pixels,3)
 
+    plt.close()
+    plt.figure(1)
     plt.imshow(gray, cmap='gray')
     plt.scatter(cc,rr)
     plt.scatter(c,r)
+    plt.title('Grayscale Image')
     plt.show(block=False)
 
     print('Calculated diameter value (in pixels) =', length_pixels)
@@ -83,67 +106,14 @@ def length_analysis(lengthscale_file):
 def find_center(image_v):
 
     gray = color.rgb2gray(image_v)*float((2**16)-1)
+    gray_filter = filters.gaussian(gray)
+    edge_sobel = sobel(gray_filter)
+
+    x_res = np.shape(image_v)[0]
+    y_res = np.shape(image_v)[1]
 
     min_intensity = gray.min().astype(int)
     max_intensity = gray.max().astype(int)
-
-    # gray_cropped_filter = filters.gaussian(gray)
-    # edge_sobel = sobel(gray_cropped_filter)
-    #
-    # plt.imshow(edge_sobel, cmap='gray')
-    # plt.show(block=False)
-    #
-    # threshold = input('Threshold value: ')
-    # binary = edge_sobel > int(threshold)
-    # # binary1 = edge_sobel > int(threshold)
-    # #
-    # # plt.imshow(binary1, cmap='gray')
-    # # plt.show(block=False)
-    # #
-    # # print('Crop image: ')
-    # # x_lt = input('left-top x: ')
-    # # y_lt = input('left-top y: ')
-    # # x_rb = input('right_bottom x: ')
-    # # y_rb = input('right_bottom y: ')
-    # #
-    # # x_lt = int(x_lt)
-    # # y_lt = int(y_lt)
-    # # x_rb = int(x_rb)
-    # # y_rb = int(y_rb)
-    # #
-    # # binary = binary1[y_lt:y_rb+1, x_lt:x_rb+1]
-    #
-    # plt.imshow(binary, cmap='gray')
-    # plt.show(block=False)
-    #
-    # print('Diameter of an interference ring:')
-    # extent1 = input('extent1 : ')
-    # extent2 = input('extent2 : ')
-    #
-    # range = [int(extent1)/2, int(extent2)/2]
-    # range = sorted(range)
-    #
-    # hough_radii = np.arange(int(range[0]), int(range[1])+1, 10)
-    # # hough_radii = 475
-    #
-    # # print(hough_radii)
-    # # print('haha')
-    # hough_res = hough_circle(binary, hough_radii)
-    # # print('yo mama')
-    # ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
-    # rr, cc = circle_perimeter(r,c,hough_radii[ridx])
-    #
-    # plt.imshow(binary, cmap='gray')
-    # plt.scatter(cc,rr)
-    # plt.scatter(c,r)
-    # plt.show()
-    #
-    # center = [c, r]
-    #
-    # input()
-
-    x_centered_image  = np.shape(image_v)[0]
-    y_centered_image  = np.shape(image_v)[1]
 
     print('[min, max] = [' + str(min_intensity) +', ' + str(max_intensity) + ']')
 
@@ -158,51 +128,201 @@ def find_center(image_v):
         if i==0:
             threshold = avg_intensity
         else:
-            threshold = input('Threshold = ')
+            threshold = int(input('Threshold = '))
 
-        binary = gray > threshold
+        binary = edge_sobel < threshold
 
         plt.close()
+        plt.figure(1)
+        plt.subplot(2,2,1)
+        plt.imshow(gray, cmap='gray')
+        plt.title('Grayscale Image')
 
-        plt.subplot(1,2,1)
-        plt.imshow(gray, cmap=plt.get_cmap('gray'))
+        plt.subplot(2,2,2)
+        plt.imshow(gray_filter, cmap='gray')
+        plt.title('Filtered Grayscale Image')
 
-        plt.subplot(1,2,2)
-        plt.imshow(binary, cmap=plt.get_cmap('gray'))
+        plt.subplot(2,2,3)
+        plt.imshow(edge_sobel, cmap='gray')
+        plt.title('Edge Sobel Image')
 
-        plt.show(block = False)
+        plt.subplot(2,2,4)
+        plt.imshow(binary, cmap='gray')
+        plt.title('Binary Image')
+
+        plt.show(block=False)
 
         char = input('Exit (y/n): ')
         i = i + 1
 
     plt.close()
 
-    plt.imshow(binary, cmap=plt.get_cmap('gray'))
+    plt.figure(2)
+    plt.imshow(binary, cmap='gray')
+    plt.grid()
+    plt.title('Binary Image')
+    plt.show(block=False)
 
-    plt.show(block = False)
+    print('Approximate extents of diameter (in pixels) -')
+    left_extents = np.array(input('left extents = ').split(',')).astype('int')
+    right_extents = np.array(input('right extents = ').split(',')).astype('int')
+    top_extents = np.array(input('top extents = ').split(',')).astype('int')
+    bottom_extents = np.array(input('bottom extents = ').split(',')).astype('int')
 
-    print('x_limits')
-    x0 = input('x0 = ')
-    x1 = input('x1 = ')
-    print('y_limits')
-    y0 = input('y0 = ')
-    y1 = input('y1 = ')
+    diameter_minimum_value = np.mean([min(right_extents)-max(left_extents), min(bottom_extents)-max(top_extents)])
+    diameter_maximum_value = np.mean([max(right_extents)-min(left_extents), max(bottom_extents)-min(top_extents)])
 
-    xc = int((float(x0) + float(x1))/2)
-    yc = int((float(y0) + float(y1))/2)
+    hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
+    hough_res = hough_circle(binary, hough_radii)
+    ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
+    rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
-    # # reference findcenter
-    # center = [1059, 1017]
-    # radius = 988
+    xc, yc = c, r
 
     center = [xc, yc]
-    radius = int(round(min(xc, yc, x_centered_image-1-xc, y_centered_image-1-yc)))
+    radius = int(round(min(xc, yc, x_res-1-xc, y_res-1-yc)))
 
-    print(center)
-    print(radius)
-    # raw_input()
+    plt.close()
+    plt.figure(2)
+    plt.imshow(binary, cmap='gray')
+    plt.scatter(cc,rr)
+    plt.scatter(c,r)
+    plt.title('Binary Image')
+    plt.show(block=False)
+
+    print('Calculated center of newtons rings (in pixels) =', center)
+    print('Calculated radius of newtons rings (in pixels) =', radius)
+
+    input('\nPress [ENTER] to continue...')
+    plt.close()
 
     return center, radius
+
+########################################
+
+def analysis_reference(image_filename, mod_image_v, center, radius_px, px_microns):
+
+    xc = center[0]
+    yc = center[1]
+
+    x_px = np.shape(mod_image_v)[0]
+    y_px = np.shape(mod_image_v)[1]
+
+    if '400' in image_filename or 'la1172' in image_filename:
+        print('\nf400 lens used (LA1172)')
+        f_lens = 400.0  #LA1172
+        R_lens = 206.0
+        lens_config = 'f0400'
+    elif '300' in image_filename or 'la1484' in image_filename:
+        print('\nf300 lens used (LA1484)')
+        f_lens = 300.0  #LA1484
+        R_lens = 154.5
+        lens_config = 'f0300'
+    elif '1000' in image_filename or 'la1464' in image_filename:
+        print('\nf1000 lens used (LA1464)')
+        f_lens = 1000.0  #LA1464
+        R_lens = 515.1
+        lens_config = 'f1000'
+    else:
+        f_lens = 0
+        R_lens = 0
+        lens_config = 'none'
+        print('No lens configuration detected. Exit the code.')
+
+    option = input('Correct (y/n)?: ')
+
+    if option == 'y' or 'Y':
+        r_microns = np.arange(0,radius_px+1,1)*px_microns
+        r_mm = r_microns/1000.0
+        h_microns = (R_lens - np.sqrt((R_lens*R_lens)-(r_mm*r_mm)))*1000.0
+
+        theta_start = 0
+        theta_end = 360
+        delta_theta = round(math.degrees(math.atan(2.0/radius_px)),1)
+        n = int((theta_end-theta_start)/delta_theta)
+        s = radius_px + 1
+
+        output = np.zeros((n,s,3), dtype = int)
+
+        for i in range(n):
+            theta = theta_start + ((i-1)*delta_theta)
+            for j in range(s):
+                xx = int(round(xc+(j*np.cos(np.deg2rad(-theta)))))
+                yy = int(round(yc+(j*np.sin(np.deg2rad(-theta)))))
+                output[i,j,0] = mod_image_v[yy,xx,0]
+                output[i,j,1] = mod_image_v[yy,xx,1]
+                output[i,j,2] = mod_image_v[yy,xx,2]
+
+        R_sum = np.zeros(s)
+        G_sum = np.zeros(s)
+        B_sum = np.zeros(s)
+
+        for j in range(s):
+            count = 0
+            for i in range(n):
+                count = count + 1
+                R_sum[j] = R_sum[j] + output[i,j,0]
+                G_sum[j] = G_sum[j] + output[i,j,1]
+                B_sum[j] = B_sum[j] + output[i,j,2]
+
+        R_avg = R_sum/count
+        G_avg = G_sum/count
+        B_avg = B_sum/count
+        rgb_colors = np.dstack((R_avg, G_avg, B_avg))
+
+        ref_colors = image_sRGB_to_Lab(rgb_colors)
+        image_axi = image_axisymmetric(rgb_colors)
+
+    else:
+
+        print('Please re-run the code using proper lens configuration')
+        r_mm = 0
+        h_microns = 0
+        rgb_colors = 0
+        ref_colors = 0
+        image_axi = 0
+
+    print('Analysis of reference image completed!!')
+
+    return r_mm, h_microns, rgb_colors, ref_colors, image_axi, lens_config
+
+########################################
+
+def savefile_reference(lens_config, radius_px, r_mm, h_microns, ref_colors, rgb_colors, px_microns):
+
+    f = os.getcwd()
+    info_file = f + '/info_' + lens_config
+    if os.path.exists(info_file):
+        print('\n**Info folder already exists**')
+    else:
+        os.mkdir(info_file)
+
+    os.chdir(info_file)
+
+    ref_colors1 = ref_colors[0,:,0]
+    ref_colors2 = ref_colors[0,:,1]
+    ref_colors3 = ref_colors[0,:,2]
+
+    ref_R = rgb_colors[0,:,0]
+    ref_G = rgb_colors[0,:,1]
+    ref_B = rgb_colors[0,:,2]
+
+    np.savetxt('radius.txt', [int(radius_px)], fmt='%d')
+    np.savetxt('r_mm.txt', r_mm, fmt='%0.6f')
+    np.savetxt('h_microns.txt', h_microns, fmt='%0.6f')
+    np.savetxt('px_microns.txt', [px_microns], fmt='%0.6f')
+
+    np.savetxt('ref_colors1.txt', ref_colors1, fmt='%0.6f')
+    np.savetxt('ref_colors2.txt', ref_colors2, fmt='%0.6f')
+    np.savetxt('ref_colors3.txt', ref_colors3, fmt='%0.6f')
+
+    np.savetxt('ref_R.txt', ref_R, fmt='%d')
+    np.savetxt('ref_G.txt', ref_G, fmt='%d')
+    np.savetxt('ref_B.txt', ref_B, fmt='%d')
+
+    print('Saving of reference image completed!!')
+
+    return None
 
 ########################################
 
@@ -223,69 +343,6 @@ def image_color_normalization(image, background):
     image_color_corrected = (image_ratio*((np.power(2.0,16.0)-1.0)/(factor*max_val))).astype(int)
 
     return image_color_corrected
-
-########################################
-
-def analysis_reference(mod_image_v, center, radius_px, px_microns):
-
-    xc = center[0]
-    yc = center[1]
-
-    x_px = np.shape(mod_image_v)[0]
-    y_px = np.shape(mod_image_v)[1]
-
-    # f_lens = 400.0  #LA1172
-    # R_lens = 206.0
-
-    f_lens = 300.0  #LA1484
-    R_lens = 154.5
-
-    # f_lens = 1000.0  #LA1464
-    # R_lens = 515.1
-
-    r_microns = np.arange(0,radius_px+1,1)*px_microns
-    r_mm = r_microns/1000.0
-    h_microns = (R_lens - np.sqrt((R_lens*R_lens)-(r_mm*r_mm)))*1000.0
-
-    theta_start = 0
-    theta_end = 360
-    delta_theta = round(math.degrees(math.atan(2.0/radius_px)),1)
-    # delta_theta = 10
-    n = int((theta_end-theta_start)/delta_theta)
-    s = radius_px + 1
-
-    output = np.zeros((n,s,3), dtype = int)
-
-    for i in range(n):
-        theta = theta_start + ((i-1)*delta_theta)
-        for j in range(s):
-            xx = int(round(xc+(j*np.cos(np.deg2rad(-theta)))))
-            yy = int(round(yc+(j*np.sin(np.deg2rad(-theta)))))
-            output[i,j,0] = mod_image_v[yy,xx,0]
-            output[i,j,1] = mod_image_v[yy,xx,1]
-            output[i,j,2] = mod_image_v[yy,xx,2]
-
-    R_sum = np.zeros(s)
-    G_sum = np.zeros(s)
-    B_sum = np.zeros(s)
-
-    for j in range(s):
-        count = 0
-        for i in range(n):
-            count = count + 1
-            R_sum[j] = R_sum[j] + output[i,j,0]
-            G_sum[j] = G_sum[j] + output[i,j,1]
-            B_sum[j] = B_sum[j] + output[i,j,2]
-
-    R_avg = R_sum/count
-    G_avg = G_sum/count
-    B_avg = B_sum/count
-    rgb_colors = np.dstack((R_avg, G_avg, B_avg))
-
-    ref_colors = image_sRGB_to_Lab(rgb_colors)
-    image_axi = image_axisymmetric(rgb_colors)
-
-    return r_mm, h_microns, rgb_colors, ref_colors, image_axi
 
 ########################################
 
@@ -338,42 +395,6 @@ def analysis_experiment(mod_image_e, theta_start, theta_end, center, radius_px, 
     image_axi = image_axisymmetric(rgb_colors)
 
     return r_mm, rgb_colors, ref_colors, image_axi
-
-########################################
-
-def savefile_reference(radius_px, r_mm, h_microns, ref_colors, rgb_colors, px_microns):
-
-    f = os.getcwd()
-    info_file = f + '/info'
-    if os.path.exists(info_file):
-        print('Info folder already exists!')
-    else:
-        os.mkdir(info_file)
-
-    os.chdir(info_file)
-
-    ref_colors1 = ref_colors[0,:,0]
-    ref_colors2 = ref_colors[0,:,1]
-    ref_colors3 = ref_colors[0,:,2]
-
-    ref_R = rgb_colors[0,:,0]
-    ref_G = rgb_colors[0,:,1]
-    ref_B = rgb_colors[0,:,2]
-
-    np.savetxt('radius.txt', [int(radius_px)], fmt='%d')
-    np.savetxt('r_mm.txt', r_mm, fmt='%0.6f')
-    np.savetxt('h_microns.txt', h_microns, fmt='%0.6f')
-    np.savetxt('px_microns.txt', [px_microns], fmt='%0.6f')
-
-    np.savetxt('ref_colors1.txt', ref_colors1, fmt='%0.6f')
-    np.savetxt('ref_colors2.txt', ref_colors2, fmt='%0.6f')
-    np.savetxt('ref_colors3.txt', ref_colors3, fmt='%0.6f')
-
-    np.savetxt('ref_R.txt', ref_R, fmt='%d')
-    np.savetxt('ref_G.txt', ref_G, fmt='%d')
-    np.savetxt('ref_B.txt', ref_B, fmt='%d')
-
-    return None
 
 ########################################
 
