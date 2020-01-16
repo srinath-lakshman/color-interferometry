@@ -38,27 +38,31 @@ def length_analysis(lengthscale_file):
     gray = color.rgb2gray(rgb)*float((2**16)-1)
 
     plt.imshow(gray, cmap='gray')
+    plt.grid()
     plt.show(block=False)
 
-    print('Diameter range in pixels:')
-    extent1 = input('extent1 : ')
-    extent2 = input('extent2 : ')
+    print('Approximate diameter range (in pixels) -')
+    extent1 = input('extent1 = ')
+    extent2 = input('extent2 = ')
 
-    range = [int(extent1)/2, int(extent2)/2]
-    range = sorted(range)
+    radii_range = [int(extent1)/2, int(extent2)/2]
+    radii_range = sorted(radii_range)
 
     gray_cropped_filter = filters.gaussian(gray)
     edge_sobel = sobel(gray_cropped_filter)
     threshold = threshold_otsu(edge_sobel)
     binary = edge_sobel > threshold
 
-    hough_radii = np.arange(int(range[0]), int(range[1]))
+    hough_radii = np.arange(int(radii_range[0]), int(radii_range[1]), 1)
     hough_res = hough_circle(binary, hough_radii)
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
-    length_scale_mm = 1
-    length_pixels = int(2*hough_radii[ridx])
+    diameter_pixels = int(2*hough_radii[ridx])
+    diameter_mm = input('Enter diameter value (in mm) = ')
+
+    length_scale_mm = int(diameter_mm)
+    length_pixels = int(diameter_pixels)
     px_microns = round((1000.0*length_scale_mm)/length_pixels,3)
 
     plt.imshow(gray, cmap='gray')
@@ -66,10 +70,10 @@ def length_analysis(lengthscale_file):
     plt.scatter(c,r)
     plt.show(block=False)
 
-    print('Diameter = ', length_pixels, ' pixels')
-    print('1 pixel = ', px_microns, ' microns')
+    print('Calculated diameter value (in pixels) =', length_pixels)
+    print('1 pixel =', px_microns, 'microns')
 
-    input()
+    input('\nPress [ENTER] to continue...')
     plt.close()
 
     return px_microns

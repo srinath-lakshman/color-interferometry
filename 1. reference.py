@@ -19,6 +19,9 @@ reference_image = image_readfile(reference_image_file)
 px_microns = 1.385
 # px_microns = length_analysis(reference_lengthscale_file)
 
+print('process finished')
+input()
+
 center = [1022, 1024]
 radius_px = 1022
 # center, radius_px = find_center(reference_image)
