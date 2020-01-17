@@ -11,46 +11,26 @@ from skimage import graph as route_through_array
 
 ################################################################################
 
-# fr = hard_disk + project + r'reference/info'
-# os.chdir(fr)
+f_ref = r'/media/devici/328C773C8C76F9A5/color_interferometry/bottom_view/20200114/reference/info_f0400'
+os.chdir(f_ref)
 
-# n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
-# h_ref_microns = np.loadtxt('h_microns.txt')
+n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
+h_ref_microns = np.loadtxt('h_microns.txt')
 
-f_new = r'/media/devici/328C773C8C76F9A5/color_interferometry/bottom_view/20200112/reference/info'
-os.chdir(f_new)
-
-n_ref_new, sRGB_ref_new, Lab_ref_new, px_ref_microns_new = analysis_readme()
-h_ref_microns_new = np.loadtxt('h_microns.txt')
-
-f_old = r'/media/devici/328C773C8C76F9A5/color_interferometry/bottom_view/20191210/reference/info'
-os.chdir(f_old)
-
-n_ref_old, sRGB_ref_old, Lab_ref_old, px_ref_microns_old = analysis_readme()
-h_ref_microns_old = np.loadtxt('h_microns.txt')
-
-# print(np.shape(sRGB_ref_new))
-# input()
-
-# plt.plot(h_ref_microns_new, sRGB_ref_new[0,:,2]-(40800-18800) , label='new')
-plt.plot(h_ref_microns_old, sRGB_ref_old[0,:,0], color='red')
-plt.plot(h_ref_microns_old, sRGB_ref_old[0,:,1], color='green')
-plt.plot(h_ref_microns_old, sRGB_ref_old[0,:,2], color='blue')
-
-plt.plot(h_ref_microns_new, sRGB_ref_new[0,:,0], color='red')
-plt.plot(h_ref_microns_new, sRGB_ref_new[0,:,1], color='green')
-plt.plot(h_ref_microns_new, sRGB_ref_new[0,:,2], color='blue')
-
-plt.show()
-
-################################################################################
-
-fe = hard_disk + project + r'experiment/lower_impact_speed_run1/info/lower_impact_run1_0001'
-os.chdir(fe)
+f_exp = r'/media/devici/328C773C8C76F9A5/color_interferometry/bottom_view/20191210/experiment/info/experiment_image000073'
+os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
 r_exp_mm = range(n_exp)*px_exp_microns*(1/1000.0)
 
+# print(np.shape(sRGB_exp))
+# input()
+
+# image_axi = image_axisymmetric(sRGB_exp)
+#
+# plt.imshow(color_8bit(image_axi))
+# plt.show()
+
 ################################################################################
 
 os.chdir('..')
@@ -58,27 +38,15 @@ os.chdir('..')
 
 ################################################################################
 
-h_mod = h_ref_microns[0:n_ref]
-
-[RR,HH] = np.meshgrid(r_exp_mm, h_mod)
+[RR,HH] = np.meshgrid(r_exp_mm, h_ref_microns)
 
 RGB_ref_ratio = np.zeros((1,n_ref,3))
 RGB_exp_ratio = np.zeros((1,n_exp,3))
-
-print(np.shape(sRGB_ref))
-haha = np.array([sRGB_ref[0,:,0]/np.sum(sRGB_ref[0,:,:], axis=1)])
-print(np.shape(haha))
-# input()
 
 for i in range(n_ref):
     RGB_ref_ratio[0,i,0] = sRGB_ref[0,i,0]/(sRGB_ref[0,i,0]+sRGB_ref[0,i,1]+sRGB_ref[0,i,2])
     RGB_ref_ratio[0,i,1] = sRGB_ref[0,i,1]/(sRGB_ref[0,i,0]+sRGB_ref[0,i,1]+sRGB_ref[0,i,2])
     RGB_ref_ratio[0,i,2] = sRGB_ref[0,i,2]/(sRGB_ref[0,i,0]+sRGB_ref[0,i,1]+sRGB_ref[0,i,2])
-
-print('yo mama')
-# print(RGB_ref_ratio[0,10,0])
-print(haha[0,5], RGB_ref_ratio[0,5,0])
-input()
 
 for i in range(n_exp):
     RGB_exp_ratio[0,i,0] = sRGB_exp[0,i,0]/(sRGB_exp[0,i,0]+sRGB_exp[0,i,1]+sRGB_exp[0,i,2])
@@ -94,6 +62,16 @@ for i in range(n_ref):
         de_Lab[i,j] = np.sqrt(((Lab_ref[0,i,1] - Lab_exp[0,j,1])**2) + ((Lab_ref[0,i,2] - Lab_exp[0,j,2])**2))
 
 ################################################################################
+
+plt.subplot(1,2,1)
+plt.imshow(de_RGB, cmap='gray', aspect='auto')
+plt.gca().invert_yaxis()
+
+plt.subplot(1,2,2)
+plt.imshow(de_Lab, cmap='gray', aspect='auto')
+plt.gca().invert_yaxis()
+
+plt.show()
 
 haha = np.zeros(n_exp)
 

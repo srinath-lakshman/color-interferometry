@@ -157,6 +157,8 @@ def find_center(image_v):
 
     plt.close()
 
+    binary = binary[100:350,250:550]
+
     plt.figure(2)
     plt.imshow(binary, cmap='gray')
     plt.grid()
