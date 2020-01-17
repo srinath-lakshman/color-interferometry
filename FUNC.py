@@ -232,7 +232,7 @@ def analysis_reference(image_filename, mod_image_v, center, radius_px, px_micron
     option = input('Correct (y/n)?: ')
 
     if option == 'y' or 'Y':
-        r_microns = np.arange(0,radius_px+1,1)*px_microns
+        r_microns = np.arange(0,radius_px,1)*px_microns
         r_mm = r_microns/1000.0
         h_microns = (R_lens - np.sqrt((R_lens*R_lens)-(r_mm*r_mm)))*1000.0
 
@@ -240,7 +240,7 @@ def analysis_reference(image_filename, mod_image_v, center, radius_px, px_micron
         theta_end = 360
         delta_theta = round(math.degrees(math.atan(2.0/radius_px)),1)
         n = int((theta_end-theta_start)/delta_theta)
-        s = radius_px + 1
+        s = radius_px
 
         output = np.zeros((n,s,3), dtype = int)
 
