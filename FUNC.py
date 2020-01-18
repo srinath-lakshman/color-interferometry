@@ -109,31 +109,45 @@ def find_center(image_v):
     gray_filter = filters.gaussian(gray)
     edge_sobel = sobel(gray_filter)
 
+    threshold = int(threshold_otsu(edge_sobel))
+    binary = edge_sobel < threshold
+
     x_res = np.shape(image_v)[0]
     y_res = np.shape(image_v)[1]
 
-    min_intensity = gray.min().astype(int)
-    max_intensity = gray.max().astype(int)
+    print('########### THRESHOLD ###########')
+    print('Edge Sobel Image')
+    print('[min,max] = [{},{}]'.format(int(edge_sobel.min()),int(edge_sobel.max())))
 
-    print('[min, max] = [' + str(min_intensity) +', ' + str(max_intensity) + ']')
+    plt.close()
+    plt.figure(1)
+    plt.subplot(2,2,1)
+    plt.imshow(gray, cmap='gray')
+    plt.title('Grayscale Image')
 
-    avg_intensity = np.mean([min_intensity, max_intensity]).astype(int)
-    print('Threshold = ' + str(avg_intensity))
+    plt.subplot(2,2,2)
+    plt.imshow(gray_filter, cmap='gray')
+    plt.title('Filtered Grayscale Image')
 
-    char = 'n'
+    plt.subplot(2,2,3)
+    plt.imshow(edge_sobel, cmap='gray')
+    plt.title('Edge Sobel Image')
 
-    i = 0
+    plt.subplot(2,2,4)
+    plt.imshow(binary, cmap='gray')
+    plt.title('Binary Image')
+
+    plt.show(block=False)
+
+    print('Threshold start = {}'.format(threshold))
+    char = input('Correct (y/n)?: ')
 
     while char != 'y':
-        if i==0:
-            threshold = avg_intensity
-        else:
-            threshold = int(input('Threshold = '))
-
+        threshold = int(input('Threshold = '))
         binary = edge_sobel < threshold
 
         plt.close()
-        plt.figure(1)
+
         plt.subplot(2,2,1)
         plt.imshow(gray, cmap='gray')
         plt.title('Grayscale Image')
@@ -151,21 +165,44 @@ def find_center(image_v):
         plt.title('Binary Image')
 
         plt.show(block=False)
+        char = input('Correct (y/n)?: ')
 
-        char = input('Exit (y/n): ')
-        i = i + 1
-
+    print('Threshold done!!')
+    print('#################################\n')
     plt.close()
 
-    binary = binary[100:350,250:550]
+    print('############# CROP #############')
+    print('Binary Image')
 
-    plt.figure(2)
     plt.imshow(binary, cmap='gray')
     plt.grid()
     plt.title('Binary Image')
     plt.show(block=False)
 
-    print('Approximate extents of diameter (in pixels) -')
+    char = input('Crop image (y/n)?: ')
+
+    if char == 'y':
+        left_top_corner = np.array(input('left-top corner = ').split(',')).astype('int')
+        right_bottom_corner = np.array(input('right-bottom corner = ').split(',')).astype('int')
+    else:
+        left_top_corner = [0,0]
+        right_bottom_corner = [x_res,y_res]
+
+    binary_mod = binary[left_top_corner[1]:right_bottom_corner[1],left_top_corner[0]:right_bottom_corner[0]]
+
+    print('Crop done!!')
+    print('#################################\n')
+    plt.close()
+
+    print('########## CIRCLE FIT ##########')
+    print('Cropped Binary Image')
+
+    plt.imshow(binary_mod, cmap='gray')
+    plt.grid()
+    plt.title('Cropped Binary Image')
+    plt.show(block=False)
+
+    print('Approximate diameter extents (in pixels) -')
     left_extents = np.array(input('left extents = ').split(',')).astype('int')
     right_extents = np.array(input('right extents = ').split(',')).astype('int')
     top_extents = np.array(input('top extents = ').split(',')).astype('int')
@@ -175,25 +212,30 @@ def find_center(image_v):
     diameter_maximum_value = np.mean([max(right_extents)-min(left_extents), max(bottom_extents)-min(top_extents)])
 
     hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
-    hough_res = hough_circle(binary, hough_radii)
+    hough_res = hough_circle(binary_mod, hough_radii)
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
-    xc, yc = c, r
+    xc, yc = c + left_top_corner[0], r + left_top_corner[1]
+    cc, rr = cc + left_top_corner[0], rr + left_top_corner[1]
 
     center = [xc, yc]
     radius = int(round(min(xc, yc, x_res-1-xc, y_res-1-yc)))
 
+    print('Circle fit done!!')
+    print('#################################\n')
+    plt.close()
+
+    print('Center of newtons rings (in pixels) =', center)
+    print('Radius of newtons rings (in pixels) =', radius)
+
     plt.close()
     plt.figure(2)
-    plt.imshow(binary, cmap='gray')
+    plt.imshow(gray, cmap='gray')
     plt.scatter(cc,rr)
-    plt.scatter(c,r)
+    plt.scatter(xc,yc)
     plt.title('Binary Image')
     plt.show(block=False)
-
-    print('Calculated center of newtons rings (in pixels) =', center)
-    print('Calculated radius of newtons rings (in pixels) =', radius)
 
     input('\nPress [ENTER] to continue...')
     plt.close()
@@ -411,7 +453,9 @@ def savefile_experimental(experiment_image_file, radius_px, r_mm, ref_colors, rg
 
     os.chdir(info_file)
 
-    experimental_folder = info_file + '/' + experiment_image_file[0:22]
+    head, _, _ = experiment_image_file.partition('.')
+    experimental_folder = info_file + '/' + head
+
     if os.path.exists(experimental_folder):
         print('Experimental folder already exists!')
     else:

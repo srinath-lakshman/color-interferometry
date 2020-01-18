@@ -6,30 +6,22 @@ from skimage import graph as route_through_array
 
 ################################################################################
 
-# hard_disk   = r'/media/devici/328C773C8C76F9A5/'
-# project     = r'color_interferometry/bottom_view/20200112/'
+hard_disk   = r'/media/devici/328C773C8C76F9A5/'
+project     = r'color_interferometry/bottom_view/20200114/'
 
 ################################################################################
 
-f_ref = r'/media/devici/328C773C8C76F9A5/color_interferometry/bottom_view/20200114/reference/info_f0400'
+f_ref = hard_disk + project + r'reference/info_f0400'
 os.chdir(f_ref)
 
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-f_exp = r'/media/devici/328C773C8C76F9A5/color_interferometry/bottom_view/20191210/experiment/info/experiment_image000073'
+f_exp = hard_disk + project + r'experiment/higher_speed_mica_run1/info/higher_speed_mica_run1_000155'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
 r_exp_mm = range(n_exp)*px_exp_microns*(1/1000.0)
-
-# print(np.shape(sRGB_exp))
-# input()
-
-# image_axi = image_axisymmetric(sRGB_exp)
-#
-# plt.imshow(color_8bit(image_axi))
-# plt.show()
 
 ################################################################################
 
@@ -64,13 +56,10 @@ for i in range(n_ref):
 ################################################################################
 
 plt.subplot(1,2,1)
-plt.imshow(de_RGB, cmap='gray', aspect='auto')
-plt.gca().invert_yaxis()
+plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
 
 plt.subplot(1,2,2)
-plt.imshow(de_Lab, cmap='gray', aspect='auto')
-plt.gca().invert_yaxis()
-
+plt.pcolormesh(RR,HH,de_RGB, cmap='gray')
 plt.show()
 
 haha = np.zeros(n_exp)
