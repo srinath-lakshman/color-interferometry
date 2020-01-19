@@ -216,6 +216,12 @@ def find_center(image_v):
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
+    # plt.close()
+    # plt.imshow(binary_mod, cmap='gray')
+    # plt.scatter(cc,rr)
+    # plt.scatter(c,r)
+    # plt.show()
+
     xc, yc = c + left_top_corner[0], r + left_top_corner[1]
     cc, rr = cc + left_top_corner[0], rr + left_top_corner[1]
 
@@ -439,6 +445,89 @@ def analysis_experiment(mod_image_e, theta_start, theta_end, center, radius_px, 
     image_axi = image_axisymmetric(rgb_colors)
 
     return r_mm, rgb_colors, ref_colors, image_axi
+
+########################################
+
+def analysis_drop_extents(image_axi, radius_px, rgb_colors, ref_colors):
+
+    l = int(np.mean([np.shape(image_axi)[0],np.shape(image_axi)[1]]))
+    s = int((l-1)/2)
+
+    variance = np.zeros(radius_px)
+
+    for i in range(radius_px):
+        variance[i] = np.var(ref_colors[0,i:,0])
+
+    variance_threshold = 1.00
+
+    radius_px = np.array(np.where(variance < variance_threshold))[0,0]
+    rr, cc = circle_perimeter(0,0,radius_px)
+
+    plt.subplot(2,2,1)
+    plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+    plt.xlim(-s,+s)
+    plt.ylim(-s,+s)
+
+    plt.subplot(2,2,3)
+    plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+    plt.scatter(0,0)
+    plt.scatter(cc,rr)
+    plt.xlim(-s,+s)
+    plt.ylim(-s,+s)
+
+    plt.subplot(2,2,2)
+    plt.plot(ref_colors[0,:,0], linestyle='-', color='black')
+    plt.axvline(x=radius_px, linestyle='--', color='black')
+    plt.grid()
+
+    plt.subplot(2,2,4)
+    plt.plot(variance, linestyle='-', color='black')
+    plt.axvline(x=radius_px, linestyle='--', color='black')
+    plt.grid()
+
+    plt.show(block=False)
+
+    print('Variance start = {}'.format(variance_threshold))
+    char = input('Correct (y/n)?: ')
+
+    while char != 'y':
+
+        variance_threshold = float(input('Variance = '))
+
+        radius_px = np.array(np.where(variance < variance_threshold))[0,0]
+        rr, cc = circle_perimeter(0,0,radius_px)
+
+        plt.close()
+        plt.subplot(2,2,1)
+        plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+        plt.xlim(-s,+s)
+        plt.ylim(-s,+s)
+
+        plt.subplot(2,2,3)
+        plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+        plt.scatter(cc,rr)
+        plt.scatter(0,0)
+        plt.xlim(-s,+s)
+        plt.ylim(-s,+s)
+
+        plt.subplot(2,2,2)
+        plt.plot(ref_colors[0,:,0], linestyle='-', color='black')
+        plt.axvline(x=radius_px, linestyle='--', color='black')
+        plt.grid()
+
+        plt.subplot(2,2,4)
+        plt.plot(variance, linestyle='-', color='black')
+        plt.axvline(x=radius_px, linestyle='--', color='black')
+        plt.grid()
+
+        plt.show(block=False)
+
+        char = input('Correct (y/n)?: ')
+
+    print('Variance done!!')
+    plt.close()
+
+    return radius_px
 
 ########################################
 

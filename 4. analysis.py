@@ -2,7 +2,9 @@ import os
 from mpl_toolkits import mplot3d as Axes3D
 from matplotlib import cm
 from FUNC import *
-from skimage import graph as route_through_array
+from skimage.graph import route_through_array
+import scipy.fftpack
+from scipy.signal import savgol_filter
 
 ################################################################################
 
@@ -55,235 +57,92 @@ for i in range(n_ref):
 
 ################################################################################
 
-plt.subplot(1,2,1)
+plt.subplot(2,1,1)
 plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
+plt.xlabel(r'r $[mm]$')
+plt.ylabel(r'h $[\mu m]$')
 
-plt.subplot(1,2,2)
-plt.pcolormesh(RR,HH,de_RGB, cmap='gray')
-plt.show()
+plt.subplot(2,2,3)
+plt.scatter(de_Lab[:,0], h_ref_microns, marker='.', color='black')
+plt.title('Start Intensity Profile')
 
-haha = np.zeros(n_exp)
+plt.subplot(2,2,4)
+plt.scatter(de_Lab[:,n_exp-1], h_ref_microns, marker='.', color='black')
+plt.title('End Intensity Profile')
 
-for i in range(n_exp):
-    index_min = np.argmin(de_RGB[0:n_ref,i])
-    haha[i] = index_min
+plt.show(block=False)
 
-################################################################################
+input()
+print('Minimum path length algorithm')
+# start_location = np.array(input('Start height range = ').split(',')).astype('float')
+# end_location = np.array(input('End height range = ').split(',')).astype('float')
 
-[_, min_start_experiment] = peakdetect(de_RGB[:,0], x_axis = None, lookahead = 20, delta=0)
-min_start_experiment = np.array(min_start_experiment)
+# Lower impact speed
+# image 'lower_speed_mica_run1_000092.tif'
+# start_location = [2.925, 2.915]
+# end_location = [0.601, 0.599]
 
-[_, min_end_experiment] = peakdetect(de_RGB[:,n_exp-1], x_axis = None, lookahead = 20, delta=0)
-min_end_experiment = np.array(min_end_experiment)
+# Higher impact speed
+# image 'higher_speed_mica_run1_000155.tif'
 
-# plt.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-# plt.axis('auto')
-# plt.xlim(0, n_exp-1)
-# plt.ylim(0, n_ref-1)
-# plt.show()
-#
-# plt.figure(0)
-# plt.imshow()
-#
-# plt.figure(1)
-# plt.plot(de_RGB[:,0])
-# plt.scatter(min_start_experiment[:,0], min_start_experiment[:,1])
-#
-# plt.figure(2)
-# plt.plot(de_RGB[:,n_exp-1])
-# plt.scatter(min_end_experiment[:,0], min_end_experiment[:,1])
-#
-# plt.show()
+start_location = [2.336, 2.332]
+end_location = [0.3575, 0.3570]
 
-len_start = np.shape(min_start_experiment)[0]
-len_end = np.shape(min_end_experiment)[0]
+# start_location = [2.585, 2.583]
+# end_location = [0.608, 0.606]
 
-# new_array_de = np.zeros(np.shape())
+start_index = int(np.where((h_ref_microns > min(start_location)) & (h_ref_microns < max(start_location)))[0])
+end_index = int(np.where((h_ref_microns > min(end_location)) & (h_ref_microns < max(end_location)))[0])
 
-sum_weight = 100
+# fully_connected == True means diagonal moves are permitted. If False, only axial (x and y) moves allowed.
+# geometric == True means diagonal distances are incorporated. If False, diagonal distances are ignored.
+indices, weight = route_through_array(de_Lab, (start_index,0), (end_index,n_exp-1),fully_connected=True, geometric=False)
+indices1 = np.asarray(indices)
+r_path_minimum_exp = RR[indices1[:,0],indices1[:,1]]
+h_path_minimum_exp = HH[indices1[:,0],indices1[:,1]]
 
-for i in range(len_start):
-    for j in range(len_end):
-        indices, weight = route_through_array(de_RGB, (int(min_start_experiment[i,0]),0), (int(min_end_experiment[j,0]),n_exp-1), fully_connected=False, geometric=False)
-        indices = np.array(indices)
+h_smooth = h_path_minimum_exp
 
-        # plt.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-        # plt.axis('auto')
-        # plt.xlim(0, n_exp-1)
-        # plt.ylim(0, n_ref-1)
-        # plt.show()
+plt.close()
 
-        # plt.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-        # plt.plot(new_array, color='red')
-        # plt.axis('auto')
-        # plt.xlim(0, n_exp-1)
-        # plt.ylim(0, n_ref-1)
-        # plt.show()
+plt.subplot(2,2,1)
+plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
+plt.xlabel(r'r $[mm]$')
+plt.ylabel(r'h $[\mu m]$')
 
-        # sum_avg[i,j] = weight
-        pp = weight
-        if pp < sum_weight:
-            sum_weight = pp
-            start_index = i
-            end_index = j
-        del indices, weight
+plt.subplot(2,4,5)
+plt.scatter(de_Lab[:,0], h_ref_microns, marker='.', color='black')
+plt.axhline(y=h_ref_microns[start_index], linestyle='--', color='black')
+plt.title('Start Intensity Profile')
 
-# print(min_start_experiment[start_index,0], min_end_experiment[end_index,0])
-#
-# plt.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-# indices, weight = route_through_array(de_RGB, (int(min_start_experiment[start_index,0]),0), (int(min_end_experiment[end_index,0]),n_exp-1), fully_connected=True, geometric=True)
-# indices = np.array(indices)
-# plt.scatter(indices[:,1], indices[:,0], color='red')
-# plt.axis('auto')
-# plt.xlim(0, n_exp-1)
-# plt.ylim(0, n_ref-1)
-# plt.show()
-#
-# plt.figure(1)
-# plt.plot(h_mod[int(min_start_experiment[start_index,0]):int(min_end_experiment[end_index,0])])
-# plt.show()
+plt.subplot(2,4,6)
+plt.scatter(de_Lab[:,n_exp-1], h_ref_microns, marker='.', color='black')
+plt.axhline(y=h_ref_microns[end_index], linestyle='--', color='black')
+plt.title('End Intensity Profile')
 
-# indices, weight = route_through_array(de_RGB, (int(min_start_experiment[start_index,0]),0), (int(min_end_experiment[end_index,0]),n_exp-1), fully_connected=True, geometric=True)
-# indices = np.array(indices)
-#
-# fig, ax = plt.subplots()
-# font_size = 18
-# w = 10
-# h = 7.5
-# fig.set_size_inches(w,h)
-# contourf_ = ax.pcolormesh(RR, HH, de_RGB, cmap=cm.gray)
-# plt.scatter(indices[:,1], indices[:,0], color='red')
-# cbar = fig.colorbar(contourf_)
-# cbar.ax.tick_params(labelsize=font_size)
-# plt.xlabel(r'r $\left[ mm \right]$', fontsize=font_size)
-# plt.ylabel(r'h $\left[ \mu m \right]$', fontsize=font_size)
-# plt.xticks(fontsize=font_size)
-# plt.yticks(fontsize=font_size)
-# plt.title(r'From sRGB model', fontsize=font_size)
-# # plt.savefig(r'test.png', dpi=300, format='png')
-#
-# plt.show()
+plt.subplot(2,2,2)
+plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
+plt.plot(r_path_minimum_exp, h_path_minimum_exp, linestyle='-', color='white')
+plt.xlabel(r'r $[mm]$')
+plt.ylabel(r'h $[\mu m]$')
 
-indices, weight = route_through_array(de_RGB, (int(min_start_experiment[0,0]),0), (int(min_end_experiment[0,0]),n_exp-1))
+plt.subplot(2,2,4)
+plt.plot(r_path_minimum_exp, h_smooth, linestyle='-', color='black')
+plt.xlabel(r'r $[mm]$')
+plt.ylabel(r'h $[\mu m]$')
 
-# print(indices[0])
-# print(indices[0,0], indices[0,1])
-# input()
+plt.show(block=False)
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-# ax.scatter(range(n_exp),haha, color='Gray')
-    # ax.scatter(indices[:,1], indices[:,0], color='red')
-# plt.xlim(0, n_exp-1)
-# plt.ylim(0, n_ref-1)
-ax.set_aspect('auto')
-plt.xticks([0, n_exp-1])
-plt.yticks([0, n_ref-1])
-plt.title('From sRGB model')
-# plt.savefig(r'test1.png', dpi=300, format='png')
+os.chdir(f_exp)
 
-# ax = fig.add_subplot(122)
-# ax.imshow(de_Lab, cmap=plt.get_cmap('gray'))
-# plt.gca().invert_yaxis()
-# ax.set_aspect('auto')
-# plt.title('From Lab model')
+start_index_path = [0, h_ref_microns[start_index]]
+end_index_path = [r_exp_mm[n_exp-1], h_ref_microns[end_index]]
 
-plt.show()
+path_endpoints = [start_index_path, end_index_path]
+profile_unfiltered = np.array([r_path_minimum_exp, h_path_minimum_exp]).T
 
-################################################################################
+np.savetxt('path_endpoints.txt', path_endpoints, fmt='%0.6f')
+np.savetxt('profile_unfiltered.txt', profile_unfiltered, fmt='%0.6f')
 
-# # start_val = np.argmin(de_Lab[:,0])
-# # end_val = np.argmin(de_Lab[:,n_exp-1])
-#
-# plt.figure(1)
-# plt.imshow(de_Lab, cmap=plt.get_cmap('gray'))
-# plt.xlim(0, n_exp-1)
-# plt.ylim(0, n_ref-1)
-# # plt.scatter(0, start_val)
-# # plt.scatter(n_exp-1, end_val)
-# plt.scatter(0,pick)
-# plt.axis('auto')
-#
-# plt.show()
-
-################################################################################
-
-pick = np.argmin(de_Lab[700:740,0]) + 700
-# pick = np.argmin(de_RGB[730:765,0]) + 730
-x_length = n_exp
-
-yo_mama = np.zeros(x_length, dtype='int')
-h_exp_microns = np.zeros(x_length)
-
-points = [0, 175, 225, 250, x_length]
-
-division1 = [points[0],points[1]]
-division2 = [points[1]+1, points[2]]
-division3 = [points[2]+1, points[3]]
-division4 = [points[3]+1, points[4]]
-
-for i in range(x_length):
-    if division1[0] <= i <= division1[1]:
-        down_variation = 20
-        up_variation = 0
-    elif division2[0] <= i <= division2[1]:
-        down_variation = 10
-        up_variation = 0
-    elif division3[0] <= i <= division3[1]:
-        down_variation = 4
-        up_variation = 0
-    elif division4[0] <= i <= division4[1]:
-        down_variation = 18
-        up_variation = 0
-    else:
-        down_variation = 0
-        up_variation = 0
-    pick = np.argmin(de_RGB[pick-down_variation:pick+up_variation+1,i]) + pick-down_variation
-    yo_mama[i] = pick
-    h_exp_microns[i] = h_ref_microns[pick]
-
-plt.subplot(121)
-plt.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-plt.xlim(0, n_exp-1)
-plt.ylim(0, n_ref-1)
-plt.axvline(x=points[0], color='green', linestyle='--')
-plt.axvline(x=points[1], color='green', linestyle='--')
-plt.axvline(x=points[2], color='green', linestyle='--')
-plt.axvline(x=points[3], color='green', linestyle='--')
-plt.axvline(x=points[4], color='green', linestyle='--')
-plt.scatter(range(x_length), yo_mama, color='red')
-plt.axis('auto')
-
-plt.subplot(122)
-plt.scatter(range(x_length)*px_exp_microns*(1/1000.0), h_exp_microns)
-plt.ylim(0,4)
-
-plt.show()
-
-# fig, ax = plt.subplots()
-# font_size = 18
-# w = 10
-# h = 7.5
-# fig.set_size_inches(w,h)
-# contourf_ = ax.pcolormesh(RR, HH, de_RGB, cmap=cm.gray)
-# cbar = fig.colorbar(contourf_)
-# cbar.ax.tick_params(labelsize=font_size)
-# plt.xlabel(r'r $\left[ mm \right]$', fontsize=font_size)
-# plt.ylabel(r'h $\left[ \mu m \right]$', fontsize=font_size)
-# plt.xticks(fontsize=font_size)
-# plt.yticks(fontsize=font_size)
-# plt.title(r'From sRGB model', fontsize=font_size)
-# # plt.savefig(r'test.png', dpi=300, format='png')
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.imshow(de_RGB, cmap=plt.get_cmap('gray'))
-# # ax.scatter(range(n_exp),haha, color='Gray')
-# plt.xlim(0, n_exp-1)
-# plt.ylim(0, n_ref-1)
-# ax.set_aspect('auto')
-# plt.xticks([0, n_exp-1])
-# plt.yticks([0, n_ref-1])
-# plt.title('From sRGB model')
-# # plt.savefig(r'test1.png', dpi=300, format='png')
+input('Extracting air profiles done!!')
+plt.close()
