@@ -1,10 +1,8 @@
 import os
-from mpl_toolkits import mplot3d as Axes3D
-from matplotlib import cm
 from FUNC import *
 from skimage.graph import route_through_array
-import scipy.fftpack
-from scipy.signal import savgol_filter
+from scipy.signal import argrelextrema
+from scipy.spatial import distance
 
 ################################################################################
 
@@ -19,7 +17,7 @@ os.chdir(f_ref)
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-f_exp = hard_disk + project + r'experiment/higher_speed_mica_run1/info/higher_speed_mica_run1_000155'
+f_exp = hard_disk + project + r'experiment/lower_speed_mica_run1/info/lower_speed_mica_run1_000092'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
@@ -57,91 +55,92 @@ for i in range(n_ref):
 
 ################################################################################
 
-plt.subplot(2,1,1)
+index_minima_horizontal = np.array(argrelextrema(de_Lab, np.less, axis=0)).T
+index_minima_vertical = np.array(argrelextrema(de_Lab, np.less, axis=1)).T
+
+R_minima_horizontal = RR[index_minima_horizontal[:,0], index_minima_horizontal[:,1]]
+H_minima_horizontal = HH[index_minima_horizontal[:,0], index_minima_horizontal[:,1]]
+
+R_minima_vertical = RR[index_minima_vertical[:,0], index_minima_vertical[:,1]]
+H_minima_vertical = HH[index_minima_vertical[:,0], index_minima_vertical[:,1]]
+
+# R_minima = np.concatenate([R_minima_horizontal,R_minima_vertical])
+# H_minima = np.concatenate([H_minima_horizontal,H_minima_vertical])
+
+R_minima = R_minima_horizontal
+H_minima = H_minima_horizontal
+
+plt.figure(1)
 plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
 plt.xlabel(r'r $[mm]$')
 plt.ylabel(r'h $[\mu m]$')
-
-plt.subplot(2,2,3)
-plt.scatter(de_Lab[:,0], h_ref_microns, marker='.', color='black')
-plt.title('Start Intensity Profile')
-
-plt.subplot(2,2,4)
-plt.scatter(de_Lab[:,n_exp-1], h_ref_microns, marker='.', color='black')
-plt.title('End Intensity Profile')
-
+plt.xlim(0, max(r_exp_mm))
+plt.ylim(0, max(h_ref_microns))
 plt.show(block=False)
 
-input()
-print('Minimum path length algorithm')
-# start_location = np.array(input('Start height range = ').split(',')).astype('float')
-# end_location = np.array(input('End height range = ').split(',')).astype('float')
+start_location = np.array(input('Enter start location [radius, height] = ').split(',')).astype('float')
+R_start = R_minima[np.argmin((R_minima - start_location[0])**2)]
+H_start = H_minima[np.argmin((H_minima - start_location[1])**2)]
+start_location = [R_start, H_start]
 
-# Lower impact speed
-# image 'lower_speed_mica_run1_000092.tif'
-# start_location = [2.925, 2.915]
-# end_location = [0.601, 0.599]
+end_location = np.array(input('Enter end location [radius, height] = ').split(',')).astype('float')
+R_end = R_minima[np.argmin((R_minima - end_location[0])**2)]
+H_end = H_minima[np.argmin((H_minima - end_location[1])**2)]
+end_location = [R_end, H_end]
 
-# Higher impact speed
-# image 'higher_speed_mica_run1_000155.tif'
+initial_path, initial_points = calculate_path_minimum_profile(de_Lab, start_location, end_location, r_exp_mm, h_ref_microns)
 
-start_location = [2.336, 2.332]
-end_location = [0.3575, 0.3570]
-
-# start_location = [2.585, 2.583]
-# end_location = [0.608, 0.606]
-
-start_index = int(np.where((h_ref_microns > min(start_location)) & (h_ref_microns < max(start_location)))[0])
-end_index = int(np.where((h_ref_microns > min(end_location)) & (h_ref_microns < max(end_location)))[0])
-
-# fully_connected == True means diagonal moves are permitted. If False, only axial (x and y) moves allowed.
-# geometric == True means diagonal distances are incorporated. If False, diagonal distances are ignored.
-indices, weight = route_through_array(de_Lab, (start_index,0), (end_index,n_exp-1),fully_connected=True, geometric=False)
-indices1 = np.asarray(indices)
-r_path_minimum_exp = RR[indices1[:,0],indices1[:,1]]
-h_path_minimum_exp = HH[indices1[:,0],indices1[:,1]]
-
-h_smooth = h_path_minimum_exp
-
-plt.close()
-
-plt.subplot(2,2,1)
-plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
-plt.xlabel(r'r $[mm]$')
-plt.ylabel(r'h $[\mu m]$')
-
-plt.subplot(2,4,5)
-plt.scatter(de_Lab[:,0], h_ref_microns, marker='.', color='black')
-plt.axhline(y=h_ref_microns[start_index], linestyle='--', color='black')
-plt.title('Start Intensity Profile')
-
-plt.subplot(2,4,6)
-plt.scatter(de_Lab[:,n_exp-1], h_ref_microns, marker='.', color='black')
-plt.axhline(y=h_ref_microns[end_index], linestyle='--', color='black')
-plt.title('End Intensity Profile')
-
-plt.subplot(2,2,2)
-plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
-plt.plot(r_path_minimum_exp, h_path_minimum_exp, linestyle='-', color='white')
-plt.xlabel(r'r $[mm]$')
-plt.ylabel(r'h $[\mu m]$')
-
-plt.subplot(2,2,4)
-plt.plot(r_path_minimum_exp, h_smooth, linestyle='-', color='black')
-plt.xlabel(r'r $[mm]$')
-plt.ylabel(r'h $[\mu m]$')
-
+plt.figure(1)
+plt.plot(initial_path[:,0],initial_path[:,1], linestyle='-', color='white')
+plt.scatter(initial_points[:,0],initial_points[:,1], marker='o', color='red')
 plt.show(block=False)
+
+char = input('Additional locations (y/n)?: ')
+
+points = [[initial_points[0,0],initial_points[0,1]], [initial_points[1,0],initial_points[1,1]]]
+
+char = 'y'
+
+while char == 'y':
+    intermediate = np.array(input('Enter additonal location [radius, height] = ').split(',')).astype('float')
+    R_intermediate = R_minima[np.argmin((R_minima - intermediate[0])**2)]
+    H_intermediate = H_minima[np.argmin((H_minima - intermediate[1])**2)]
+
+    points = np.vstack((points,[[R_intermediate, H_intermediate]]))
+    points1 = points.tolist()
+    points1.sort(key=lambda x: x[0])
+    points = np.array(points1)
+
+    k = np.shape(points)[0]
+
+    r_path = []
+    h_path = []
+
+    for i in range(k-1):
+        path, _ = calculate_path_minimum_profile(de_Lab, [ points[i,0], points[i,1] ], [ points[i+1,0] ,points[i+1,1] ], r_exp_mm, h_ref_microns)
+
+        r_path = np.append(r_path, path[:,0])
+        h_path = np.append(h_path, path[:,1])
+
+    plt.close()
+    plt.figure(1)
+    plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
+    plt.plot(r_path,h_path, linestyle='-', color='white')
+    plt.scatter(points[:,0],points[:,1], marker='o', color='red')
+    plt.xlabel(r'r $[mm]$')
+    plt.ylabel(r'h $[\mu m]$')
+    plt.xlim(0, max(r_exp_mm))
+    plt.ylim(0, max(h_ref_microns))
+    plt.show(block=False)
+
+    char = input('Additional locations (y/n)?: ')
 
 os.chdir(f_exp)
 
-start_index_path = [0, h_ref_microns[start_index]]
-end_index_path = [r_exp_mm[n_exp-1], h_ref_microns[end_index]]
+path_points = np.array(points)
+profile_unfiltered = np.array([r_path, h_path]).T
 
-path_endpoints = [start_index_path, end_index_path]
-profile_unfiltered = np.array([r_path_minimum_exp, h_path_minimum_exp]).T
-
-np.savetxt('path_endpoints.txt', path_endpoints, fmt='%0.6f')
+np.savetxt('path_points.txt', path_points, fmt='%0.6f')
 np.savetxt('profile_unfiltered.txt', profile_unfiltered, fmt='%0.6f')
 
 input('Extracting air profiles done!!')

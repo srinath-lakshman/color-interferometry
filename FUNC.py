@@ -14,6 +14,7 @@ from skimage.filters import threshold_otsu
 from skimage import filters
 from skimage.transform import hough_circle
 from skimage.draw import circle_perimeter
+from skimage.graph import route_through_array
 
 ########################################
 
@@ -573,6 +574,29 @@ def savefile_experimental(experiment_image_file, radius_px, r_mm, ref_colors, rg
     np.savetxt('ref_B.txt', ref_B, fmt='%d')
 
     return None
+
+########################################
+
+def calculate_path_minimum_profile(de_Lab, start_location, end_location, r_exp_mm, h_ref_microns):
+
+    [RR,HH] = np.meshgrid(r_exp_mm, h_ref_microns)
+
+    r_start_index = np.array(np.where(r_exp_mm == start_location[0]))
+    h_start_index = np.array(np.where(h_ref_microns == start_location[1]))
+
+    r_end_index = np.array(np.where(r_exp_mm == end_location[0]))
+    h_end_index = np.array(np.where(h_ref_microns == end_location[1]))
+
+    indices, weight = route_through_array(de_Lab, [h_start_index, r_start_index], [h_end_index, r_end_index], fully_connected=True, geometric=False)
+    indices1 = np.asarray(indices)
+
+    r_path = RR[indices1[:,0],indices1[:,1]]
+    h_path = HH[indices1[:,0],indices1[:,1]]
+
+    path = np.array([r_path, h_path]).T
+    points = np.array([start_location, end_location])
+
+    return path, points
 
 ########################################
 
