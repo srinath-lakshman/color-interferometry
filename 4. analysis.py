@@ -17,7 +17,7 @@ os.chdir(f_ref)
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-f_exp = hard_disk + project + r'experiment/lower_speed_mica_run1/info/lower_speed_mica_run1_000092'
+f_exp = hard_disk + project + r'experiment/lower_speed_mica_run1/info/lower_speed_mica_run1_000093'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
@@ -70,12 +70,13 @@ H_minima_vertical = HH[index_minima_vertical[:,0], index_minima_vertical[:,1]]
 R_minima = R_minima_horizontal
 H_minima = H_minima_horizontal
 
-plt.figure(1)
+plt.figure(1, figsize=(6,6))
 plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
 plt.xlabel(r'r $[mm]$')
 plt.ylabel(r'h $[\mu m]$')
 plt.xlim(0, max(r_exp_mm))
 plt.ylim(0, max(h_ref_microns))
+plt.tight_layout()
 plt.show(block=False)
 
 start_location = np.array(input('Enter start location [radius, height] = ').split(',')).astype('float')

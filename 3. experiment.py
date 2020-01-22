@@ -18,15 +18,21 @@ px_microns = 2.717
 
 fe = fl + r'/lower_speed_mica_run1'
 os.chdir(fe)
-experiment_image_file = r'lower_speed_mica_run1_000092.tif'
+experiment_image_file = r'lower_speed_mica_run1_000108.tif'
 experiment_image = image_readfile(experiment_image_file)
 
-center = [379, 394]           #from the code
-radius_px = 373               #from the code
-# center, radius_px = find_center(experiment_image)
+# center = [377, 402]           #from the code
+# radius_px = 365               #from the code
+center, radius_px = find_center(experiment_image)
+
+threshold = experiment_threshold(experiment_image)
 
 ################################# GLOBAL LIMIT #################################
-radius_px = 350
+# lower speed
+radius_px = 300
+#
+# # higher speed
+# radius_px = 500
 ################################################################################
 
 # threshold = 750
@@ -40,6 +46,6 @@ _, rgb_colors, ref_colors, image_axi = analysis_experiment(experiment_image, 270
 radius_px_mod = analysis_drop_extents(image_axi, radius_px, rgb_colors, ref_colors)
 r_mm, rgb_colors_mod, ref_colors_mod, image_axi_mod = analysis_experiment(experiment_image, 270-22.5, 270+22.5, center, radius_px_mod, px_microns)
 
-savefile_experimental(experiment_image_file, radius_px_mod, r_mm, ref_colors_mod, rgb_colors_mod, px_microns)
+savefile_experimental(experiment_image_file, radius_px_mod, r_mm, ref_colors_mod, rgb_colors_mod, px_microns, image_axi)
 
 ################################################################################
