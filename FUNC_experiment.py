@@ -23,381 +23,170 @@ def color_8bit(rgb):
 
 ########################################
 
-def image_readfile(image_name):
+def experiment_readimage(image_name):
     image_address = os.getcwd() + '/' + image_name
     image = io.imread(image_address)
     return image
 
 ########################################
 
-def length_analysis(lengthscale_file):
+def experiment_threshold(image, threshold=0):
 
-    f = os.getcwd()
-    main_lengthscale_file = f + '/' + lengthscale_file
-
-    rgb = io.imread(main_lengthscale_file)
-    gray = color.rgb2gray(rgb)*float((2**16)-1)
-
+    gray = color.rgb2gray(image)*float((2**16)-1)
     gray_filter = filters.gaussian(gray)
-    edge_sobel = sobel(gray_filter)
-    threshold = threshold_otsu(edge_sobel)
-    binary = edge_sobel > threshold
 
-    plt.figure(1)
-    plt.subplot(2,2,1)
-    plt.imshow(gray, cmap='gray')
-    plt.grid()
-    plt.title('Grayscale Image')
+    edge_sobel = sobel(gray_filter).astype('int')
+    min, max = edge_sobel.min(), edge_sobel.max()
 
-    plt.subplot(2,2,2)
-    plt.imshow(gray_filter, cmap='gray')
-    plt.grid()
-    plt.title('Filtered Grayscale Image')
+    print("########### THRESHOLD ###########")
+    print("Edge Sobel Image")
+    print(f"[min,max] = [{min},{max}]")
 
-    plt.subplot(2,2,3)
-    plt.imshow(edge_sobel, cmap='gray')
-    plt.grid()
-    plt.title('Edge Sobel Image')
+    if threshold == 0:
 
-    plt.subplot(2,2,4)
-    plt.imshow(binary, cmap='gray')
-    plt.grid()
-    plt.title('Binary Image')
-    plt.show(block=False)
+        threshold = int(threshold_otsu(edge_sobel))
+        binary = edge_sobel < threshold
 
-    print('Approximate extents of diameter (in pixels) -')
-    left_extents = np.array(input('left extents = ').split(',')).astype('int')
-    right_extents = np.array(input('right extents = ').split(',')).astype('int')
-    top_extents = np.array(input('top extents = ').split(',')).astype('int')
-    bottom_extents = np.array(input('bottom extents = ').split(',')).astype('int')
+        plt.close()
+        f = plt.figure(1, figsize=(8,10))
+        ax1 = plt.subplot(2,2,1)
+        ax1.imshow(gray, cmap='gray')
+        ax1.set_title("Grayscale Image")
 
-    diameter_minimum_value = np.mean([min(right_extents)-max(left_extents), min(bottom_extents)-max(top_extents)])
-    diameter_maximum_value = np.mean([max(right_extents)-min(left_extents), max(bottom_extents)-min(top_extents)])
+        ax2 = plt.subplot(2,2,2)
+        ax2.imshow(gray_filter, cmap='gray')
+        ax2.set_title("Filtered Grayscale Image")
+
+        ax3 = plt.subplot(2,2,3)
+        ax3.imshow(edge_sobel, cmap='gray')
+        ax3.set_title("Edge Sobel Image")
+
+        ax4 = plt.subplot(2,2,4)
+        ax4.imshow(binary, cmap='gray')
+        ax4.set_title("Binary Image")
+
+        plt.show(block=False)
+
+        print(f"Threshold start = {threshold}")
+        char = input("Correct (y/n)?: ")
+
+        while char != 'y':
+            threshold = input("Threshold = ")
+            binary = edge_sobel < threshold
+
+            ax4.cla()
+            ax4.imshow(binary, cmap='gray')
+            plt.show(block=False)
+
+            char = input("Correct (y/n)?: ")
+    else:
+        binary = edge_sobel < threshold
+
+    print("Threshold done!!")
+    print("#################################\n")
+    plt.close()
+
+    return gray, binary
+
+########################################
+
+def experiment_crop(image, crop=[[0,0],[0,0]]):
+
+    print("############# CROP #############")
+    print("Binary Image")
+
+    if np.array_equal( crop, np.zeros((2,2)) ):
+
+        plt.close()
+        f = plt.figure(1, figsize=(7,7))
+        ax = plt.subplot(1,1,1)
+        ax.imshow(image, cmap='gray')
+        ax.grid()
+        ax.set_title("Binary Image")
+        plt.show(block=False)
+
+        char = input("Crop image (y/n)?: ")
+
+        if char == 'y':
+            ltc = np.array(input("left-top corner = ").split(',')).astype('int')
+            rbc = np.array(input("right-bottom corner = ").split(',')).astype('int')
+        else:
+            ltc = [0,0]
+            rbc = list(np.shape(image))
+
+        crop = [ [ltc[0],ltc[1]], [rbc[0],rbc[1]] ]
+
+    crop = np.array(crop)
+    cropped_image = image[crop[0,1]:crop[1,1],crop[0,0]:crop[1,0]]
+
+    print("Crop done!!")
+    print("#################################\n")
+    plt.close()
+
+    return cropped_image, crop
+
+########################################
+
+def experiment_circlefit(gray, binary, crop, diameter_extents=[[0,0],[0,0],[0,0],[0,0]]):
+
+    print("########## CIRCLE FIT ##########")
+    print("Cropped Binary Image")
+
+    if np.array_equal( diameter_extents, np.zeros((4,2)) ):
+
+        plt.close()
+        f = plt.figure(1, figsize=(7,7))
+        ax = plt.subplot(1,1,1)
+        ax.imshow(binary, cmap='gray')
+        ax.grid()
+        ax.set_title("Cropped Binary Image")
+        plt.show(block=False)
+
+        print('Approximate diameter extents (in pixels) -')
+        le = np.array(input('left extents = ').split(',')).astype('int')
+        re = np.array(input('right extents = ').split(',')).astype('int')
+        te = np.array(input('top extents = ').split(',')).astype('int')
+        be = np.array(input('bottom extents = ').split(',')).astype('int')
+
+    else:
+        diameter_extents = np.array(diameter_extents)
+        le = diameter_extents[0,:]
+        re = diameter_extents[1,:]
+        te = diameter_extents[2,:]
+        be = diameter_extents[3,:]
+
+    diameter_minimum_value = np.mean([min(re)-max(le), min(be)-max(te)])
+    diameter_maximum_value = np.mean([max(re)-min(le), max(be)-min(te)])
 
     hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
     hough_res = hough_circle(binary, hough_radii)
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
-    diameter_pixels = int(2*hough_radii[ridx])
-    diameter_mm = input('Enter diameter value (in mm) = ')
+    xc, yc = c + crop[0,0] , r + crop[0,1]
+    cc, rr = cc + crop[0,0], rr + crop[0,1]
 
-    length_scale_mm = int(diameter_mm)
-    length_pixels = int(diameter_pixels)
-    px_microns = round((1000.0*length_scale_mm)/length_pixels,3)
+    x_res, y_res = list(np.shape(gray))
 
-    plt.close()
-    plt.figure(1)
-    plt.imshow(gray, cmap='gray')
-    plt.scatter(cc,rr)
-    plt.scatter(c,r)
-    plt.title('Grayscale Image')
-    plt.show(block=False)
-
-    print('Calculated diameter value (in pixels) =', length_pixels)
-    print('1 pixel =', px_microns, 'microns')
-
-    input('\nPress [ENTER] to continue...')
-    plt.close()
-
-    return px_microns
-
-########################################
-
-def find_center(image_v):
-
-    gray = color.rgb2gray(image_v)*float((2**16)-1)
-    gray_filter = filters.gaussian(gray)
-    edge_sobel = sobel(gray_filter)
-
-    threshold = int(threshold_otsu(edge_sobel))
-    binary = edge_sobel < threshold
-
-    x_res = np.shape(image_v)[0]
-    y_res = np.shape(image_v)[1]
-
-    print('########### THRESHOLD ###########')
-    print('Edge Sobel Image')
-    print('[min,max] = [{},{}]'.format(int(edge_sobel.min()),int(edge_sobel.max())))
-
-    plt.close()
-    plt.figure(1)
-    plt.subplot(2,2,1)
-    plt.imshow(gray, cmap='gray')
-    plt.title('Grayscale Image')
-
-    plt.subplot(2,2,2)
-    plt.imshow(gray_filter, cmap='gray')
-    plt.title('Filtered Grayscale Image')
-
-    plt.subplot(2,2,3)
-    plt.imshow(edge_sobel, cmap='gray')
-    plt.title('Edge Sobel Image')
-
-    plt.subplot(2,2,4)
-    plt.imshow(binary, cmap='gray')
-    plt.title('Binary Image')
-
-    plt.show(block=False)
-
-    print('Threshold start = {}'.format(threshold))
-    char = input('Correct (y/n)?: ')
-
-    while char != 'y':
-        threshold = int(input('Threshold = '))
-        binary = edge_sobel < threshold
-
-        plt.close()
-
-        plt.subplot(2,2,1)
-        plt.imshow(gray, cmap='gray')
-        plt.title('Grayscale Image')
-
-        plt.subplot(2,2,2)
-        plt.imshow(gray_filter, cmap='gray')
-        plt.title('Filtered Grayscale Image')
-
-        plt.subplot(2,2,3)
-        plt.imshow(edge_sobel, cmap='gray')
-        plt.title('Edge Sobel Image')
-
-        plt.subplot(2,2,4)
-        plt.imshow(binary, cmap='gray')
-        plt.title('Binary Image')
-
-        plt.show(block=False)
-        char = input('Correct (y/n)?: ')
-
-    print('Threshold done!!')
-    print('#################################\n')
-    plt.close()
-
-    print('############# CROP #############')
-    print('Binary Image')
-
-    plt.imshow(binary, cmap='gray')
-    plt.grid()
-    plt.title('Binary Image')
-    plt.show(block=False)
-
-    char = input('Crop image (y/n)?: ')
-
-    if char == 'y':
-        left_top_corner = np.array(input('left-top corner = ').split(',')).astype('int')
-        right_bottom_corner = np.array(input('right-bottom corner = ').split(',')).astype('int')
-    else:
-        left_top_corner = [0,0]
-        right_bottom_corner = [x_res,y_res]
-
-    binary_mod = binary[left_top_corner[1]:right_bottom_corner[1],left_top_corner[0]:right_bottom_corner[0]]
-
-    print('Crop done!!')
-    print('#################################\n')
-    plt.close()
-
-    print('########## CIRCLE FIT ##########')
-    print('Cropped Binary Image')
-
-    plt.imshow(binary_mod, cmap='gray')
-    plt.grid()
-    plt.title('Cropped Binary Image')
-    plt.show(block=False)
-
-    print('Approximate diameter extents (in pixels) -')
-    left_extents = np.array(input('left extents = ').split(',')).astype('int')
-    right_extents = np.array(input('right extents = ').split(',')).astype('int')
-    top_extents = np.array(input('top extents = ').split(',')).astype('int')
-    bottom_extents = np.array(input('bottom extents = ').split(',')).astype('int')
-
-    diameter_minimum_value = np.mean([min(right_extents)-max(left_extents), min(bottom_extents)-max(top_extents)])
-    diameter_maximum_value = np.mean([max(right_extents)-min(left_extents), max(bottom_extents)-min(top_extents)])
-
-    hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
-    hough_res = hough_circle(binary_mod, hough_radii)
-    ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
-    rr, cc = circle_perimeter(r,c,hough_radii[ridx])
-
-    # plt.close()
-    # plt.imshow(binary_mod, cmap='gray')
-    # plt.scatter(cc,rr)
-    # plt.scatter(c,r)
-    # plt.show()
-
-    xc, yc = c + left_top_corner[0], r + left_top_corner[1]
-    cc, rr = cc + left_top_corner[0], rr + left_top_corner[1]
-
-    center = [xc, yc]
+    center = np.array([xc, yc])
     radius = int(round(min(xc, yc, x_res-1-xc, y_res-1-yc)))
 
     print('Circle fit done!!')
     print('#################################\n')
     plt.close()
 
-    # print('Center of newtons rings (in pixels) =', center)
-    # print('Radius of newtons rings (in pixels) =', radius)
-
-    # plt.close()
-    # plt.figure(2)
-    # plt.imshow(gray, cmap='gray')
-    # plt.scatter(cc,rr)
-    # plt.scatter(xc,yc)
-    # plt.title('Binary Image')
-    # plt.show(block=False)
-
-    # input('\nPress [ENTER] to continue...')
-    # plt.close()
+    f = plt.figure(1, figsize=(7,7))
+    ax = plt.subplot(1,1,1)
+    ax.imshow(gray, cmap='gray')
+    ax.scatter(xc, yc, marker='x', color='black')
+    ax.scatter(cc, rr, marker='.', color='black')
+    plt.show()
 
     return center, radius
 
 ########################################
 
-def analysis_reference(image_filename, mod_image_v, center, radius_px, px_microns):
-
-    xc = center[0]
-    yc = center[1]
-
-    x_px = np.shape(mod_image_v)[0]
-    y_px = np.shape(mod_image_v)[1]
-
-    if '400' in image_filename or 'la1172' in image_filename:
-        print('\nf400 lens used (LA1172)')
-        f_lens = 400.0  #LA1172
-        R_lens = 206.0
-        lens_config = 'f0400'
-    elif '300' in image_filename or 'la1484' in image_filename:
-        print('\nf300 lens used (LA1484)')
-        f_lens = 300.0  #LA1484
-        R_lens = 154.5
-        lens_config = 'f0300'
-    elif '1000' in image_filename or 'la1464' in image_filename:
-        print('\nf1000 lens used (LA1464)')
-        f_lens = 1000.0  #LA1464
-        R_lens = 515.1
-        lens_config = 'f1000'
-    else:
-        f_lens = 0
-        R_lens = 0
-        lens_config = 'none'
-        print('No lens configuration detected. Exit the code.')
-
-    option = input('Correct (y/n)?: ')
-
-    if option == 'y' or 'Y':
-        r_microns = np.arange(0,radius_px,1)*px_microns
-        r_mm = r_microns/1000.0
-        h_microns = (R_lens - np.sqrt((R_lens*R_lens)-(r_mm*r_mm)))*1000.0
-
-        theta_start = 0
-        theta_end = 360
-        delta_theta = round(math.degrees(math.atan(2.0/radius_px)),1)
-        n = int((theta_end-theta_start)/delta_theta)
-        s = radius_px
-
-        output = np.zeros((n,s,3), dtype = int)
-
-        for i in range(n):
-            theta = theta_start + ((i-1)*delta_theta)
-            for j in range(s):
-                xx = int(round(xc+(j*np.cos(np.deg2rad(-theta)))))
-                yy = int(round(yc+(j*np.sin(np.deg2rad(-theta)))))
-                output[i,j,0] = mod_image_v[yy,xx,0]
-                output[i,j,1] = mod_image_v[yy,xx,1]
-                output[i,j,2] = mod_image_v[yy,xx,2]
-
-        R_sum = np.zeros(s)
-        G_sum = np.zeros(s)
-        B_sum = np.zeros(s)
-
-        for j in range(s):
-            count = 0
-            for i in range(n):
-                count = count + 1
-                R_sum[j] = R_sum[j] + output[i,j,0]
-                G_sum[j] = G_sum[j] + output[i,j,1]
-                B_sum[j] = B_sum[j] + output[i,j,2]
-
-        R_avg = R_sum/count
-        G_avg = G_sum/count
-        B_avg = B_sum/count
-        rgb_colors = np.dstack((R_avg, G_avg, B_avg))
-
-        ref_colors = image_sRGB_to_Lab(rgb_colors)
-        image_axi = image_axisymmetric(rgb_colors)
-
-    else:
-
-        print('Please re-run the code using proper lens configuration')
-        r_mm = 0
-        h_microns = 0
-        rgb_colors = 0
-        ref_colors = 0
-        image_axi = 0
-
-    print('Analysis of reference image completed!!')
-
-    return r_mm, h_microns, rgb_colors, ref_colors, image_axi, lens_config
-
-########################################
-
-def savefile_reference(lens_config, radius_px, r_mm, h_microns, ref_colors, rgb_colors, px_microns):
-
-    f = os.getcwd()
-    info_file = f + '/info_' + lens_config
-    if os.path.exists(info_file):
-        print('\n**Info folder already exists**')
-    else:
-        os.mkdir(info_file)
-
-    os.chdir(info_file)
-
-    ref_colors1 = ref_colors[0,:,0]
-    ref_colors2 = ref_colors[0,:,1]
-    ref_colors3 = ref_colors[0,:,2]
-
-    ref_R = rgb_colors[0,:,0]
-    ref_G = rgb_colors[0,:,1]
-    ref_B = rgb_colors[0,:,2]
-
-    np.savetxt('radius.txt', [int(radius_px)], fmt='%d')
-    np.savetxt('r_mm.txt', r_mm, fmt='%0.6f')
-    np.savetxt('h_microns.txt', h_microns, fmt='%0.6f')
-    np.savetxt('px_microns.txt', [px_microns], fmt='%0.6f')
-
-    np.savetxt('ref_colors1.txt', ref_colors1, fmt='%0.6f')
-    np.savetxt('ref_colors2.txt', ref_colors2, fmt='%0.6f')
-    np.savetxt('ref_colors3.txt', ref_colors3, fmt='%0.6f')
-
-    np.savetxt('ref_R.txt', ref_R, fmt='%d')
-    np.savetxt('ref_G.txt', ref_G, fmt='%d')
-    np.savetxt('ref_B.txt', ref_B, fmt='%d')
-
-    print('Saving of reference image completed!!')
-
-    return None
-
-########################################
-
-def image_color_normalization(image, background):
-
-    R_avg = np.mean(background[:,:,0])
-    G_avg = np.mean(background[:,:,1])
-    B_avg = np.mean(background[:,:,2])
-
-    R_ratio = image[:,:,0]/R_avg
-    G_ratio = image[:,:,1]/G_avg
-    B_ratio = image[:,:,2]/B_avg
-    image_ratio = np.dstack((R_ratio, G_ratio, B_ratio))
-
-    max_val = max(R_ratio.max(), G_ratio.max(), B_ratio.max())
-    factor = 2.0
-
-    image_color_corrected = (image_ratio*((np.power(2.0,16.0)-1.0)/(factor*max_val))).astype(int)
-
-    return image_color_corrected
-
-########################################
-
-def analysis_experiment(mod_image_e, theta_start, theta_end, center, radius_px, px_microns):
+def experiment_analysis(mod_image_e, theta_start, theta_end, center, radius_px, px_microns):
 
     xc = center[0]
     yc = center[1]
@@ -449,29 +238,30 @@ def analysis_experiment(mod_image_e, theta_start, theta_end, center, radius_px, 
 
 ########################################
 
-def analysis_drop_extents(image_axi, radius_px, rgb_colors, ref_colors):
+def experiment_dropextents(image_axi, radius_px, rgb_colors, ref_colors):
 
     l = int(np.mean([np.shape(image_axi)[0],np.shape(image_axi)[1]]))
     s = int((l-1)/2)
 
     rr, cc = circle_perimeter(0,0,radius_px)
 
-    plt.subplot(2,2,1)
-    plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
-    plt.xlim(-s,+s)
-    plt.ylim(-s,+s)
+    f = plt.figure(1, figsize=(8,6))
+    ax1 = plt.subplot(2,2,1)
+    ax1.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+    ax1.set_xlim([-s,+s])
+    ax1.set_ylim([-s,+s])
 
-    plt.subplot(2,2,3)
-    plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
-    plt.scatter(0,0, marker='x', color='black')
-    plt.scatter(cc,rr, marker='.', color='black')
-    plt.xlim(-s,+s)
-    plt.ylim(-s,+s)
+    ax2 = plt.subplot(2,2,2)
+    ax2.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+    ax2.scatter(0,0, marker='x', color='black')
+    ax2.scatter(cc,rr, marker='.', color='black')
+    ax2.set_xlim([-s,+s])
+    ax2.set_ylim([-s,+s])
 
-    plt.subplot(1,2,2)
-    plt.plot(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], linestyle='-', color='black')
-    plt.scatter(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], marker='x', color='red')
-    plt.grid()
+    ax3 = plt.subplot(2,1,2)
+    ax3.plot(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], linestyle='-', color='black')
+    ax3.scatter(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], marker='x', color='red')
+    ax3.grid()
 
     plt.show(block=False)
 
@@ -486,24 +276,18 @@ def analysis_drop_extents(image_axi, radius_px, rgb_colors, ref_colors):
         radius_px_mod = int(input("Radius (in pixels) = "))
         rr, cc = circle_perimeter(0,0,radius_px_mod)
 
-        plt.close()
-        plt.subplot(2,2,1)
-        plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
-        plt.xlim(-s,+s)
-        plt.ylim(-s,+s)
+        ax2.cla()
+        ax2.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
+        ax2.scatter(0,0, marker='x', color='black')
+        ax2.scatter(cc,rr, marker='.', color='black')
+        ax2.set_xlim([-s,+s])
+        ax2.set_ylim([-s,+s])
 
-        plt.subplot(2,2,3)
-        plt.imshow(color_8bit(image_axi), extent=[-s,+s,-s,+s])
-        plt.scatter(0,0, marker='x', color='black')
-        plt.scatter(cc,rr, marker='.', color='black')
-        plt.xlim(-s,+s)
-        plt.ylim(-s,+s)
-
-        plt.subplot(1,2,2)
-        plt.plot(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], linestyle='-', color='black')
-        plt.scatter(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], marker='x', color='red')
-        plt.axvline(x=radius_px_mod, linestyle='--', color='black')
-        plt.grid()
+        ax3.cla()
+        ax3.plot(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], linestyle='-', color='black')
+        ax3.scatter(range(len(ref_colors[0,:,0])), ref_colors[0,:,0], marker='x', color='red')
+        ax3.axvline(x=radius_px_mod, linestyle='--', color='black')
+        ax3.grid()
 
         plt.show(block=False)
 
@@ -514,78 +298,6 @@ def analysis_drop_extents(image_axi, radius_px, rgb_colors, ref_colors):
     plt.close()
 
     return radius_px_mod
-
-########################################
-
-def savefile_experimental(experiment_image_file, radius_px, r_mm, ref_colors, rgb_colors, px_microns, image_axi):
-
-    f = os.getcwd()
-    info_file = f + '/info'
-    if os.path.exists(info_file):
-        print('Info folder already exists!')
-    else:
-        os.mkdir(info_file)
-
-    os.chdir(info_file)
-
-    head, _, _ = experiment_image_file.partition('.')
-    experimental_folder = info_file + '/' + head
-
-    if os.path.exists(experimental_folder):
-        print('Experimental folder already exists!')
-    else:
-        os.mkdir(experimental_folder)
-
-    os.chdir(experimental_folder)
-
-    ref_colors1 = ref_colors[0,:,0]
-    ref_colors2 = ref_colors[0,:,1]
-    ref_colors3 = ref_colors[0,:,2]
-
-    ref_R = rgb_colors[0,:,0]
-    ref_G = rgb_colors[0,:,1]
-    ref_B = rgb_colors[0,:,2]
-
-    np.savetxt('radius.txt', [int(radius_px)], fmt='%d')
-    np.savetxt('r_mm.txt', r_mm, fmt='%0.6f')
-    np.savetxt('px_microns.txt', [px_microns], fmt='%0.6f')
-
-    np.savetxt('ref_colors1.txt', ref_colors1, fmt='%0.6f')
-    np.savetxt('ref_colors2.txt', ref_colors2, fmt='%0.6f')
-    np.savetxt('ref_colors3.txt', ref_colors3, fmt='%0.6f')
-
-    np.savetxt('ref_R.txt', ref_R, fmt='%d')
-    np.savetxt('ref_G.txt', ref_G, fmt='%d')
-    np.savetxt('ref_B.txt', ref_B, fmt='%d')
-
-    np.savetxt('bigger_picture_R.txt', image_axi[:,:,0], fmt='%d')
-    np.savetxt('bigger_picture_G.txt', image_axi[:,:,1], fmt='%d')
-    np.savetxt('bigger_picture_B.txt', image_axi[:,:,2], fmt='%d')
-
-    return None
-
-########################################
-
-def calculate_path_minimum_profile(de_Lab, start_location, end_location, r_exp_mm, h_ref_microns):
-
-    [RR,HH] = np.meshgrid(r_exp_mm, h_ref_microns)
-
-    r_start_index = np.array(np.where(r_exp_mm == start_location[0]))
-    h_start_index = np.array(np.where(h_ref_microns == start_location[1]))
-
-    r_end_index = np.array(np.where(r_exp_mm == end_location[0]))
-    h_end_index = np.array(np.where(h_ref_microns == end_location[1]))
-
-    indices, weight = route_through_array(de_Lab, [h_start_index, r_start_index], [h_end_index, r_end_index], fully_connected=True, geometric=False)
-    indices1 = np.asarray(indices)
-
-    r_path = RR[indices1[:,0],indices1[:,1]]
-    h_path = HH[indices1[:,0],indices1[:,1]]
-
-    path = np.array([r_path, h_path]).T
-    points = np.array([start_location, end_location])
-
-    return path, points
 
 ########################################
 
@@ -601,43 +313,6 @@ def image_sRGB_to_Lab(rgb_colors):
         ref_colors[0,i,2] = lab[2]
 
     return ref_colors
-
-########################################
-
-def analysis_readme():
-
-    n = np.loadtxt('radius.txt', dtype='int')
-    px_microns = np.loadtxt('px_microns.txt')
-
-    R_ch = np.loadtxt('ref_R.txt')
-    G_ch = np.loadtxt('ref_G.txt')
-    B_ch = np.loadtxt('ref_B.txt')
-
-    L_ch = np.loadtxt('ref_colors1.txt')
-    a_ch = np.loadtxt('ref_colors2.txt')
-    b_ch = np.loadtxt('ref_colors3.txt')
-
-    sRGB = np.dstack((R_ch, G_ch, B_ch))
-    Lab = np.dstack((L_ch, a_ch, b_ch))
-
-    return n, sRGB, Lab, px_microns
-
-########################################
-
-def image_axisymmetric(rgb_colors):
-
-    l = np.shape(rgb_colors)[1]
-    a = int(np.floor((l-1)/np.sqrt(2)))
-    image_axi = np.zeros(((2*a)+1, (2*a)+1, 3), dtype=int)
-
-    for i in np.arange(0,(2*a)+1,1):
-        for j in np.arange(0,(2*a)+1,1):
-            dist = int(round(np.sqrt(((i-a)**2)+((j-a)**2))))
-            image_axi[i,j,0] = int(rgb_colors[0,dist,0])
-            image_axi[i,j,1] = int(rgb_colors[0,dist,1])
-            image_axi[i,j,2] = int(rgb_colors[0,dist,2])
-
-    return image_axi
 
 ########################################
 
@@ -693,132 +368,70 @@ def rgb2lab ( inputColor ) :
 
    return Lab
 
- ########################################
+########################################
 
-def peakdetect(y_axis, x_axis = None, lookahead = 300, delta=0):
-    """
-    Converted from/based on a MATLAB script at:
-    http://billauer.co.il/peakdet.html
+def image_axisymmetric(rgb_colors):
 
-    function for detecting local maximas and minmias in a signal.
-    Discovers peaks by searching for values which are surrounded by lower
-    or larger values for maximas and minimas respectively
+    l = np.shape(rgb_colors)[1]
+    a = int(np.floor((l-1)/np.sqrt(2)))
+    image_axi = np.zeros(((2*a)+1, (2*a)+1, 3), dtype=int)
 
-    keyword arguments:
-    y_axis -- A list containg the signal over which to find peaks
-    x_axis -- (optional) A x-axis whose values correspond to the y_axis list
-        and is used in the return to specify the postion of the peaks. If
-        omitted an index of the y_axis is used. (default: None)
-    lookahead -- (optional) distance to look ahead from a peak candidate to
-        determine if it is the actual peak (default: 200)
-        '(sample / period) / f' where '4 >= f >= 1.25' might be a good value
-    delta -- (optional) this specifies a minimum difference between a peak and
-        the following points, before a peak may be considered a peak. Useful
-        to hinder the function from picking up false peaks towards to end of
-        the signal. To work well delta should be set to delta >= RMSnoise * 5.
-        (default: 0)
-            delta function causes a 20% decrease in speed, when omitted
-            Correctly used it can double the speed of the function
+    for i in np.arange(0,(2*a)+1,1):
+        for j in np.arange(0,(2*a)+1,1):
+            dist = int(round(np.sqrt(((i-a)**2)+((j-a)**2))))
+            image_axi[i,j,0] = int(rgb_colors[0,dist,0])
+            image_axi[i,j,1] = int(rgb_colors[0,dist,1])
+            image_axi[i,j,2] = int(rgb_colors[0,dist,2])
 
-    return -- two lists [max_peaks, min_peaks] containing the positive and
-        negative peaks respectively. Each cell of the lists contains a tupple
-        of: (position, peak_value)
-        to get the average peak value do: np.mean(max_peaks, 0)[1] on the
-        results to unpack one of the lists into x, y coordinates do:
-        x, y = zip(*tab)
-    """
-    max_peaks = []
-    min_peaks = []
-    dump = []   #Used to pop the first hit which almost always is false
-
-    # check input data
-    x_axis, y_axis = _datacheck_peakdetect(x_axis, y_axis)
-    # store data length for later use
-    length = len(y_axis)
-
-
-    # #perform some checks
-    # if lookahead < 1:
-    #     raise ValueError, "Lookahead must be '1' or above in value"
-    # if not (np.isscalar(delta) and delta >= 0):
-    #     raise ValueError, "delta must be a positive number"
-
-    #maxima and minima candidates are temporarily stored in
-    #mx and mn respectively
-    mn, mx = np.Inf, -np.Inf
-
-    #Only detect peak if there is 'lookahead' amount of points after it
-    for index, (x, y) in enumerate(zip(x_axis[:-lookahead],
-                                        y_axis[:-lookahead])):
-        if y > mx:
-            mx = y
-            mxpos = x
-        if y < mn:
-            mn = y
-            mnpos = x
-
-        ####look for max####
-        if y < mx-delta and mx != np.Inf:
-            #Maxima peak candidate found
-            #look ahead in signal to ensure that this is a peak and not jitter
-            if y_axis[index:index+lookahead].max() < mx:
-                max_peaks.append([mxpos, mx])
-                dump.append(True)
-                #set algorithm to only find minima now
-                mx = np.Inf
-                mn = np.Inf
-                if index+lookahead >= length:
-                    #end is within lookahead no more peaks can be found
-                    break
-                continue
-            #else:  #slows shit down this does
-            #    mx = ahead
-            #    mxpos = x_axis[np.where(y_axis[index:index+lookahead]==mx)]
-
-        ####look for min####
-        if y > mn+delta and mn != -np.Inf:
-            #Minima peak candidate found
-            #look ahead in signal to ensure that this is a peak and not jitter
-            if y_axis[index:index+lookahead].min() > mn:
-                min_peaks.append([mnpos, mn])
-                dump.append(False)
-                #set algorithm to only find maxima now
-                mn = -np.Inf
-                mx = -np.Inf
-                if index+lookahead >= length:
-                    #end is within lookahead no more peaks can be found
-                    break
-            #else:  #slows shit down this does
-            #    mn = ahead
-            #    mnpos = x_axis[np.where(y_axis[index:index+lookahead]==mn)]
-
-
-    #Remove the false hit on the first value of the y_axis
-    try:
-        if dump[0]:
-            max_peaks.pop(0)
-        else:
-            min_peaks.pop(0)
-        del dump
-    except IndexError:
-        #no peaks were found, should the function return empty lists?
-        pass
-
-    return [max_peaks, min_peaks]
+    return image_axi
 
 ########################################
 
-def _datacheck_peakdetect(x_axis, y_axis):
-    if x_axis is None:
-        x_axis = range(len(y_axis))
+def experiment_savefile(experiment_image_file, radius_px, r_mm, ref_colors, rgb_colors, px_microns, image_axi):
 
-    if len(y_axis) != len(x_axis):
-        raise (ValueError,
-                'Input vectors y_axis and x_axis must have same length')
+    f = os.getcwd()
+    info_file = f + '/info'
+    if os.path.exists(info_file):
+        print('Info folder already exists!')
+    else:
+        os.mkdir(info_file)
 
-    #needs to be a numpy array
-    y_axis = np.array(y_axis)
-    x_axis = np.array(x_axis)
-    return x_axis, y_axis
+    os.chdir(info_file)
+
+    head, _, _ = experiment_image_file.partition('.')
+    experimental_folder = info_file + '/' + head
+
+    if os.path.exists(experimental_folder):
+        print('Experimental folder already exists!')
+    else:
+        os.mkdir(experimental_folder)
+
+    os.chdir(experimental_folder)
+
+    ref_colors1 = ref_colors[0,:,0]
+    ref_colors2 = ref_colors[0,:,1]
+    ref_colors3 = ref_colors[0,:,2]
+
+    ref_R = rgb_colors[0,:,0]
+    ref_G = rgb_colors[0,:,1]
+    ref_B = rgb_colors[0,:,2]
+
+    np.savetxt('radius.txt', [int(radius_px)], fmt='%d')
+    np.savetxt('r_mm.txt', r_mm, fmt='%0.6f')
+    np.savetxt('px_microns.txt', [px_microns], fmt='%0.6f')
+
+    np.savetxt('ref_colors1.txt', ref_colors1, fmt='%0.6f')
+    np.savetxt('ref_colors2.txt', ref_colors2, fmt='%0.6f')
+    np.savetxt('ref_colors3.txt', ref_colors3, fmt='%0.6f')
+
+    np.savetxt('ref_R.txt', ref_R, fmt='%d')
+    np.savetxt('ref_G.txt', ref_G, fmt='%d')
+    np.savetxt('ref_B.txt', ref_B, fmt='%d')
+
+    np.savetxt('bigger_picture_R.txt', image_axi[:,:,0], fmt='%d')
+    np.savetxt('bigger_picture_G.txt', image_axi[:,:,1], fmt='%d')
+    np.savetxt('bigger_picture_B.txt', image_axi[:,:,2], fmt='%d')
+
+    return None
 
 ########################################
