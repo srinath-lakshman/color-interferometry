@@ -1,8 +1,8 @@
 import os
-# from FUNC import *
-from FUNC_experiment import experiment_readimage
-from FUNC_experiment import experiment_threshold, experiment_crop, experiment_circlefit
-from FUNC_experiment import experiment_analysis, experiment_dropextents
+from matplotlib import pyplot as plt
+from FUNC_experiment import experiment_readimage, color_8bit
+from FUNC_experiment import experiment_circlefit
+from FUNC_experiment import experiment_savecircle, experiment_analysis
 from FUNC_experiment import experiment_savefile
 
 ################################################################################
@@ -22,22 +22,17 @@ px_microns = 2.717
 
 fe = fl + r'/lower_speed_mica_run1'
 os.chdir(fe)
-experiment_image_file = r'lower_speed_mica_run1_000092.tif'
+experiment_image_file = r'lower_speed_mica_run1_000110.tif'
 experiment_image = experiment_readimage(experiment_image_file)
 
-# center = [377, 402]           #from the code
-# radius_px = 365               #from the code
-# center, radius_px = find_center(experiment_image)
+center_px, radius_px = experiment_circlefit(experiment_image, center=[380,383], crop=75, threshold=100, radii=[70,80])
 
-gray, binary = experiment_threshold(experiment_image,threshold=125)
-binary_cropped, crop = experiment_crop(binary, crop=[[250,250],[500,500]])
-center, radius_px = experiment_circlefit(gray, binary_cropped, crop, diameter_extents=[[20,30],[225,235],[40,50],[245,255]])
-# center = experiment_circlefit(gray, binary_cropped, crop)
+char = input("Correct (y/n)? ")
+if char == 'y':
+    experiment_savecircle(experiment_image_file, center_px, radius_px, px_microns)
 
-r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(experiment_image, 270-22.5, 270+22.5, center, radius_px, px_microns)
-radius_px_mod = experiment_dropextents(image_axi, radius_px, rgb_colors, ref_colors)
-r_mm_mod, rgb_colors_mod, ref_colors_mod, image_axi_mod = experiment_analysis(experiment_image, 270-22.5, 270+22.5, center, radius_px_mod, px_microns)
+r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(experiment_image, 270-5, 270+5, center_px, radius_px, px_microns)
 
-experiment_savefile(experiment_image_file, radius_px_mod, r_mm_mod, ref_colors_mod, rgb_colors_mod, px_microns, image_axi)
+experiment_savefile(experiment_image_file, radius_px, r_mm, ref_colors, rgb_colors, px_microns, image_axi)
 
 ################################################################################

@@ -127,62 +127,264 @@ def experiment_crop(image, crop=[[0,0],[0,0]]):
 
 ########################################
 
-def experiment_circlefit(gray, binary, crop, diameter_extents=[[0,0],[0,0],[0,0],[0,0]]):
+# def experiment_circlefit(gray, binary, crop, diameter_extents=[[0,0],[0,0],[0,0],[0,0]]):
+#
+#     print("########## CIRCLE FIT ##########")
+#     print("Cropped Binary Image")
+#
+#     if np.array_equal( diameter_extents, np.zeros((4,2)) ):
+#
+#         plt.close()
+#         f = plt.figure(1, figsize=(7,7))
+#         ax = plt.subplot(1,1,1)
+#         ax.imshow(binary, cmap='gray')
+#         ax.grid()
+#         ax.set_title("Cropped Binary Image")
+#         plt.show(block=False)
+#
+#         print('Approximate diameter extents (in pixels) -')
+#         le = np.array(input('left extents = ').split(',')).astype('int')
+#         re = np.array(input('right extents = ').split(',')).astype('int')
+#         te = np.array(input('top extents = ').split(',')).astype('int')
+#         be = np.array(input('bottom extents = ').split(',')).astype('int')
+#
+#     else:
+#         diameter_extents = np.array(diameter_extents)
+#         le = diameter_extents[0,:]
+#         re = diameter_extents[1,:]
+#         te = diameter_extents[2,:]
+#         be = diameter_extents[3,:]
+#
+#     diameter_minimum_value = np.mean([min(re)-max(le), min(be)-max(te)])
+#     diameter_maximum_value = np.mean([max(re)-min(le), max(be)-min(te)])
+#
+#     hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
+#     hough_res = hough_circle(binary, hough_radii)
+#     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
+#     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
+#
+#     xc, yc = c + crop[0,0] , r + crop[0,1]
+#     cc, rr = cc + crop[0,0], rr + crop[0,1]
+#
+#     x_res, y_res = list(np.shape(gray))
+#
+#     center = np.array([xc, yc])
+#     radius = int(round(min(xc, yc, x_res-1-xc, y_res-1-yc)))
+#
+#     print('Circle fit done!!')
+#     print('#################################\n')
+#     plt.close()
+#
+#     f = plt.figure(1, figsize=(7,7))
+#     ax = plt.subplot(1,1,1)
+#     ax.imshow(gray, cmap='gray')
+#     ax.scatter(xc, yc, marker='x', color='black')
+#     ax.scatter(cc, rr, marker='.', color='black')
+#     plt.show()
+#
+#     return center, radius
 
-    print("########## CIRCLE FIT ##########")
-    print("Cropped Binary Image")
+########################################
 
-    if np.array_equal( diameter_extents, np.zeros((4,2)) ):
+def experiment_circlefit(image, center=[0,0], crop=0, threshold=0, radii=[0,0]):
 
-        plt.close()
-        f = plt.figure(1, figsize=(7,7))
-        ax = plt.subplot(1,1,1)
-        ax.imshow(binary, cmap='gray')
-        ax.grid()
-        ax.set_title("Cropped Binary Image")
-        plt.show(block=False)
+    print("########## CENTERING ##########")
+    print("Gray Image")
 
-        print('Approximate diameter extents (in pixels) -')
-        le = np.array(input('left extents = ').split(',')).astype('int')
-        re = np.array(input('right extents = ').split(',')).astype('int')
-        te = np.array(input('top extents = ').split(',')).astype('int')
-        be = np.array(input('bottom extents = ').split(',')).astype('int')
+    gray = color.rgb2gray(image)*float((2**16)-1)
+    x_res, y_res = list(np.shape(gray))
+    xc, yc = int(x_res/2), int(y_res/2)
 
-    else:
-        diameter_extents = np.array(diameter_extents)
-        le = diameter_extents[0,:]
-        re = diameter_extents[1,:]
-        te = diameter_extents[2,:]
-        be = diameter_extents[3,:]
+    plt.close()
+    f = plt.figure(1, figsize=(6,4))
+    ax1 = plt.subplot(2,3,1)
+    ax1.imshow(gray, cmap='gray')
+    ax1.axvline(x = xc, linestyle='-', color='black')
+    ax1.axhline(y = yc, linestyle='-', color='black')
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax1.set_title('Image')
 
-    diameter_minimum_value = np.mean([min(re)-max(le), min(be)-max(te)])
-    diameter_maximum_value = np.mean([max(re)-min(le), max(be)-min(te)])
+    ax2 = plt.subplot(2,3,2)
+    ax2.set_title('Centered Image')
+    ax2.set_aspect('equal')
+    ax2.set_xticks([])
+    ax2.set_yticks([])
 
-    hough_radii = np.arange(int(diameter_minimum_value/2), int(diameter_maximum_value/2), 1)
+    ax3 = plt.subplot(2,3,3)
+    ax3.set_title('Cropped Image')
+    ax3.set_aspect('equal')
+    ax3.set_xticks([])
+    ax3.set_yticks([])
+
+    ax4 = plt.subplot(2,3,4)
+    ax4.set_title('Edge Image')
+    ax4.set_aspect('equal')
+    ax4.set_xticks([])
+    ax4.set_yticks([])
+
+    ax5 = plt.subplot(2,3,5)
+    ax5.set_title('Binary Image')
+    ax5.set_aspect('equal')
+    ax5.set_xticks([])
+    ax5.set_yticks([])
+
+    plt.show(block=False)
+
+    if np.array_equal( center, np.zeros((1,2)) ):
+        center = np.array(input('Approximate center = ').split(',')).astype('int')
+
+    radius = int(round(min(center[0], center[1], x_res-1-center[0], y_res-1-center[1])))
+
+    gray_centered = gray[center[1]-radius:center[1]+radius, center[0]-radius:center[0]+radius]
+    x_res_centered, y_res_centered = list(np.shape(gray_centered))
+    xc_centered, yc_centered = int(x_res_centered/2), int(y_res_centered/2)
+
+    ax2.imshow(gray_centered, cmap='gray', extent=[-radius,+radius,-radius,+radius])
+    ax2.set_xlim(-radius,+radius)
+    ax2.set_ylim(-radius,+radius)
+    ax2.axvline(x = 0, linestyle='-', color='black')
+    ax2.axhline(y = 0, linestyle='-', color='black')
+    plt.show(block=False)
+
+    print('Centering done!!')
+    print('#################################\n')
+
+    print("############# CROP #############")
+    print("Centered Image")
+
+    if crop == 0:
+        crop = int(input("Crop distance from center = "))
+
+    gray_crop = gray_centered[yc_centered-crop:yc_centered+crop,xc_centered-crop:xc_centered+crop]
+
+    ax3.imshow(gray_crop, cmap='gray', extent=[-crop,+crop,-crop,+crop])
+    ax3.set_xlim(-crop,+crop)
+    ax3.set_ylim(-crop,+crop)
+    plt.show(block=False)
+
+    print('Crop done!!')
+    print('#################################\n')
+
+    gray_filter = filters.gaussian(gray_crop)
+    edge_sobel = sobel(gray_filter).astype('int')
+    min_val, max_val = edge_sobel.min(), edge_sobel.max()
+
+    print("########### THRESHOLD ###########")
+    print("Edge Sobel Image")
+    print(f"[min,max] = [{min_val},{max_val}]")
+
+    binary = edge_sobel < int(threshold_otsu(edge_sobel))
+
+    ax4.imshow(edge_sobel, cmap='gray', extent=[-crop,+crop,-crop,+crop])
+    ax4.set_xlim(-crop,+crop)
+    ax4.set_ylim(-crop,+crop)
+
+    ax5.imshow(binary, cmap='gray', extent=[-crop,+crop,-crop,+crop])
+    ax5.set_xlim(-crop,+crop)
+    ax5.set_ylim(-crop,+crop)
+    plt.show(block=False)
+
+    if threshold == 0:
+        threshold = int(input("Threshold = "))
+
+    binary = edge_sobel < threshold
+
+    ax5.cla()
+    ax5.imshow(binary, cmap='gray', extent=[-crop,+crop,-crop,+crop])
+    ax5.set_xlim(-crop,+crop)
+    ax5.set_ylim(-crop,+crop)
+    ax5.set_title('Binary Image')
+    ax5.set_aspect('equal')
+    ax5.set_xticks([])
+    ax5.set_yticks([])
+    plt.show(block=False)
+
+    print('Threshold done!!')
+    print('#################################\n')
+
+    print("############ RADIUS #############")
+    print("Binary Image")
+
+    if np.array_equal( radius, np.zeros((1,2)) ):
+        radii = np.array(input('Radius extents = ').split(',')).astype('int')
+
+    hough_radii = np.arange(radii[0], radii[1], 1)
     hough_res = hough_circle(binary, hough_radii)
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
-    xc, yc = c + crop[0,0] , r + crop[0,1]
-    cc, rr = cc + crop[0,0], rr + crop[0,1]
+    # xc, yc = c + center[0]-radius , r + center[1]-radius
+    # cc, rr = cc + center[0]-radius, rr + center[1]-radius
 
-    x_res, y_res = list(np.shape(gray))
-
-    center = np.array([xc, yc])
-    radius = int(round(min(xc, yc, x_res-1-xc, y_res-1-yc)))
+    # center = np.array([xc, yc])
 
     print('Circle fit done!!')
     print('#################################\n')
-    plt.close()
 
-    f = plt.figure(1, figsize=(7,7))
-    ax = plt.subplot(1,1,1)
-    ax.imshow(gray, cmap='gray')
-    ax.scatter(xc, yc, marker='x', color='black')
-    ax.scatter(cc, rr, marker='.', color='black')
-    plt.show()
+    # ax3.imshow(binary_centered, cmap='gray')
+    #
+    # ax4.imshow(gray, cmap='gray')
+    # ax4.scatter(c + 250 + center[0]-radius, r + 250 + center[1]-radius, marker='x', color='black')
+    # ax4.scatter(cc + 250 + center[0]-radius, rr + 250 + center[1]-radius, marker='.', color='black')
 
-    return center, radius
+    ax5.scatter(c-crop, r-crop, marker='x', color='red')
+    ax5.scatter(cc-crop, rr-crop, marker='.', color='red')
+
+    delta_x = center[0] - radius + xc_centered - crop
+    delta_y = center[1] - radius + yc_centered - crop
+
+    ax6 = plt.subplot(2,3,6)
+    ax6.imshow(gray, cmap='gray')
+    ax6.scatter(c+delta_x, r+delta_y, marker='x', color='black')
+    ax6.scatter(cc+delta_x, rr+delta_y, marker='.', color='black')
+    ax6.set_title('Circlefit Image')
+    ax6.set_aspect('equal')
+    ax6.set_xticks([])
+    ax6.set_yticks([])
+
+    plt.show(block=False)
+
+    center_px = [c+delta_x, r+delta_y]
+    radius_max_px = int(round(min(center_px[0], center_px[1], x_res-1-center[0], y_res-1-center[1])))
+
+    return center_px, radius_max_px
+
+########################################
+
+def experiment_savecircle(file, center_px, radius_px, px_microns):
+
+    head, _, _ = file.partition('.')
+
+    info_folder = os.getcwd() + '/' + 'info'
+    if os.path.exists(info_folder):
+        print('Info folder already exists!')
+    else:
+        os.mkdir(info_folder)
+
+    os.chdir(info_folder)
+
+    center_folder = os.getcwd() + '/' + 'center'
+    if os.path.exists(center_folder):
+        print('Center folder already exists!')
+    else:
+        os.mkdir(center_folder)
+
+    os.chdir(center_folder)
+
+    project_folder = os.getcwd() + '/' + head
+    if os.path.exists(project_folder):
+        print('Experimental folder already exists!')
+    else:
+        os.mkdir(project_folder)
+
+    os.chdir(project_folder)
+
+    np.savetxt('center_px.txt', [center_px], fmt='%d')
+    np.savetxt('radius_px.txt', [radius_px], fmt='%d')
+    np.savetxt('px_microns.txt', [px_microns], fmt='%0.3f')
+
+    return None
 
 ########################################
 
@@ -200,7 +402,8 @@ def experiment_analysis(mod_image_e, theta_start, theta_end, center, radius_px, 
     # delta_theta = round(math.degrees(math.atan(2.0/radius_px)),1)
     delta_theta = 0.1
     n = int((theta_end-theta_start)/delta_theta)
-    s = radius_px + 1
+    # s = radius_px + 1
+    s = radius_px - 1
 
     output = np.zeros((n,s,3), dtype = int)
 
@@ -389,8 +592,12 @@ def image_axisymmetric(rgb_colors):
 
 def experiment_savefile(experiment_image_file, radius_px, r_mm, ref_colors, rgb_colors, px_microns, image_axi):
 
+    os.chdir('..')
+    os.chdir('..')
+    os.chdir('..')
+
     f = os.getcwd()
-    info_file = f + '/info'
+    info_file = f + '/info/colors'
     if os.path.exists(info_file):
         print('Info folder already exists!')
     else:

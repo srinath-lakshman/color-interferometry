@@ -11,13 +11,13 @@ project     = r'color_interferometry/bottom_view/20200114/'
 
 ################################################################################
 
-f_ref = hard_disk + project + r'reference/info_f0400'
+f_ref = hard_disk + project + r'reference/info_f1000'
 os.chdir(f_ref)
 
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-f_exp = hard_disk + project + r'experiment/lower_speed_mica_run1/info/lower_speed_mica_run1_000093'
+f_exp = hard_disk + project + r'experiment/lower_speed_mica_run1/info/colors/lower_speed_mica_run1_000094'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
@@ -70,13 +70,15 @@ H_minima_vertical = HH[index_minima_vertical[:,0], index_minima_vertical[:,1]]
 R_minima = R_minima_horizontal
 H_minima = H_minima_horizontal
 
-plt.figure(1, figsize=(6,6))
-plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
-plt.xlabel(r'r $[mm]$')
-plt.ylabel(r'h $[\mu m]$')
-plt.xlim(0, max(r_exp_mm))
-plt.ylim(0, max(h_ref_microns))
-plt.tight_layout()
+plt.close()
+f = plt.figure(1, figsize=(6,6))
+ax = plt.subplot(1,1,1)
+ax.pcolormesh(RR,HH,de_Lab, cmap='gray')
+ax.set_xlabel(r'r $[mm]$')
+ax.set_ylabel(r'h $[\mu m]$')
+ax.set_xlim(0, max(r_exp_mm))
+ax.set_ylim(0, max(h_ref_microns))
+f.tight_layout()
 plt.show(block=False)
 
 start_location = np.array(input('Enter start location [radius, height] = ').split(',')).astype('float')
@@ -91,9 +93,8 @@ end_location = [R_end, H_end]
 
 initial_path, initial_points = calculate_path_minimum_profile(de_Lab, start_location, end_location, r_exp_mm, h_ref_microns)
 
-plt.figure(1)
-plt.plot(initial_path[:,0],initial_path[:,1], linestyle='-', color='white')
-plt.scatter(initial_points[:,0],initial_points[:,1], marker='o', color='red')
+ax.plot(initial_path[:,0],initial_path[:,1], linestyle='-', color='white')
+ax.scatter(initial_points[:,0],initial_points[:,1], marker='o', color='red')
 plt.show(block=False)
 
 char = input('Additional locations (y/n)?: ')
@@ -123,15 +124,14 @@ while char == 'y':
         r_path = np.append(r_path, path[:,0])
         h_path = np.append(h_path, path[:,1])
 
-    plt.close()
-    plt.figure(1)
-    plt.pcolormesh(RR,HH,de_Lab, cmap='gray')
-    plt.plot(r_path,h_path, linestyle='-', color='white')
-    plt.scatter(points[:,0],points[:,1], marker='o', color='red')
-    plt.xlabel(r'r $[mm]$')
-    plt.ylabel(r'h $[\mu m]$')
-    plt.xlim(0, max(r_exp_mm))
-    plt.ylim(0, max(h_ref_microns))
+    ax.cla()
+    ax.pcolormesh(RR,HH,de_Lab, cmap='gray')
+    ax.plot(r_path,h_path, linestyle='-', color='white')
+    ax.scatter(points[:,0],points[:,1], marker='o', color='red')
+    ax.set_xlabel(r'r $[mm]$')
+    ax.set_ylabel(r'h $[\mu m]$')
+    ax.set_xlim(0, max(r_exp_mm))
+    ax.set_ylim(0, max(h_ref_microns))
     plt.show(block=False)
 
     char = input('Additional locations (y/n)?: ')
