@@ -1,38 +1,131 @@
 import os
 from matplotlib import pyplot as plt
-from FUNC_experiment import experiment_readimage, color_8bit
 from FUNC_experiment import experiment_circlefit
 from FUNC_experiment import experiment_savecircle, experiment_analysis
 from FUNC_experiment import experiment_savefile
+from skimage import io
+import numpy as np
 
 ################################################################################
 
-hard_disk   = r'/media/devici/328C773C8C76F9A5/'
-project     = r'color_interferometry/bottom_view/20200114/'
+hard_disk   = r'/media/devici/328C773C8C76F9A5'
+project     = r'color_interferometry/bottom_view/20200114'
 
-fl = hard_disk + project + r'experiment'
-os.chdir(fl)
+f = hard_disk + '/' + project + '/' + r'experiment'
+os.chdir(f)
 
 ################################################################################
 
-experiment_lengthscale_file = r'mag_2x_dot_diameter_1_mm000001.tif'
+# # Length scale information
+# image_filename  = r'mag_2x_dot_diameter_1_mm000001.tif'
+# approximate_center          = [345, 445]
+# approximate_crop            = 250
+# approximate_threshold       = -9000
+# approximate_radii           = [170,210]
+#
+# center, radius, radius_max = experiment_circlefit(\
+#                                 image_filename  = image_filename, \
+#                                 center          = approximate_center, \
+#                                 crop            = approximate_crop, \
+#                                 threshold       = approximate_threshold, \
+#                                 radii           = approximate_radii)
+#
+# lengthscale_diameter_mm = 1
+# lengthscale_diameter_px = 2 * radius
+# px_microns = round((lengthscale_diameter_mm*(10**3))/lengthscale_diameter_px,3)
+#
+# if not os.path.isfile("circlefit_parameters.txt"):
+#     txt_file = open("circlefit_parameters.txt","w")
+#     txt_file.write("INPUT:\n")
+#     txt_file.write(f"image_filename = {image_filename}\n")
+#     txt_file.write(f"approximate_center = {approximate_center}\n")
+#     txt_file.write(f"approximate_crop = {approximate_crop}\n")
+#     txt_file.write(f"approximate_threshold = {approximate_threshold}\n")
+#     txt_file.write(f"approximate_radii = {approximate_radii}\n")
+#     txt_file.write("\n")
+#     txt_file.write("OUTPUT:\n")
+#     txt_file.write(f"center = {center}\n")
+#     txt_file.write(f"radius = {radius}\n")
+#     txt_file.write(f"radius_max = {radius_max}\n")
+#     txt_file.close()
+#
+#     txt_file = open("px_microns.txt","w")
+#     txt_file.write(f"1 pixel = {px_microns} microns")
+#     txt_file.close()
+# plt.show()
 
-px_microns = 2.717
-# px_microns = length_analysis(experiment_lengthscale_file)
+px_microns = 2.747
 
-fe = fl + r'/lower_speed_mica_run1'
-os.chdir(fe)
-experiment_image_file = r'lower_speed_mica_run1_000110.tif'
-experiment_image = experiment_readimage(experiment_image_file)
+################################################################################
 
-center_px, radius_px = experiment_circlefit(experiment_image, center=[380,383], crop=75, threshold=100, radii=[70,80])
+run = r'lower_speed_mica_run1'
+os.chdir(f + '/' + run)
 
-char = input("Correct (y/n)? ")
-if char == 'y':
-    experiment_savecircle(experiment_image_file, center_px, radius_px, px_microns)
+################################################################################
 
-r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(experiment_image, 270-5, 270+5, center_px, radius_px, px_microns)
+# Center information
+image_filename              = r'lower_speed_mica_run1_000092.tif'
+approximate_center          = [378, 395]
+# approximate_center          = [100,200]
+approximate_crop            = 75
+approximate_threshold       = +100
+approximate_radii           = [60,70]
 
-experiment_savefile(experiment_image_file, radius_px, r_mm, ref_colors, rgb_colors, px_microns, image_axi)
+center, radius, radius_max = experiment_circlefit(\
+                                image_filename  = image_filename, \
+                                center          = approximate_center, \
+                                crop            = approximate_crop, \
+                                threshold       = approximate_threshold, \
+                                radii           = approximate_radii)
+
+image = io.imread(image_filename)
+
+channel_R = image[:,:,0]
+channel_G = image[:,:,1]
+channel_B = image[:,:,2]
+
+for f_subfolder in ['info', 'center', image_filename.split('.')[0]]:
+    if os.path.exists(f_subfolder):
+        print(f"{f_subfolder} folder already exist!")
+    else:
+        print(f"{f_subfolder} folder does not exist!")
+        os.mkdir(f_subfolder)
+        print(f"{f_subfolder} folder created!")
+    os.chdir(f_subfolder)
+
+# if not os.path.isfile("circlefit_parameters.txt"):
+txt_file = open("circlefit_parameters.txt","w")
+txt_file.write("INPUT:\n")
+txt_file.write(f"image_filename = {image_filename}\n")
+txt_file.write(f"approximate_center = {approximate_center}\n")
+txt_file.write(f"approximate_crop = {approximate_crop}\n")
+txt_file.write(f"approximate_threshold = {approximate_threshold}\n")
+txt_file.write(f"approximate_radii = {approximate_radii}\n")
+txt_file.write("\n")
+txt_file.write("OUTPUT:\n")
+txt_file.write(f"center = {center}\n")
+txt_file.write(f"radius = {radius}\n")
+txt_file.write(f"radius_max = {radius_max}\n")
+txt_file.close()
+
+txt_file = open("px_microns.txt","w")
+txt_file.write(f"1 pixel = {px_microns} microns")
+txt_file.close()
+
+txt_file = open("center.txt","w")
+txt_file.write(f"center = {center}")
+txt_file.close()
+
+txt_file = open("radius_max.txt","w")
+txt_file.write(f"radius_max = {radius_max}")
+txt_file.close()
+
+np.savetxt("channel_R.txt", channel_R, fmt='%d')
+np.savetxt("channel_G.txt", channel_G, fmt='%d')
+np.savetxt("channel_B.txt", channel_B, fmt='%d')
+
+r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(270-5, 270+5, center, radius_max, px_microns)
+
+experiment_savefile(image_filename, radius_max, r_mm, ref_colors, rgb_colors, px_microns, image_axi)
 
 ################################################################################
