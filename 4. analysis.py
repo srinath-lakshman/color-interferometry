@@ -6,18 +6,20 @@ from scipy.spatial import distance
 
 ################################################################################
 
-hard_disk   = r'/media/devici/328C773C8C76F9A5/'
-project     = r'color_interferometry/bottom_view/20200114/'
+hard_disk   = r'/media/devici/328C773C8C76F9A5'
+project     = r'color_interferometry/bottom_view/20200114'
 
 ################################################################################
 
-f_ref = hard_disk + project + r'reference/info_f1000'
+f_ref = hard_disk + '/' + project + '/' + r'reference/info_f0400'
 os.chdir(f_ref)
 
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-f_exp = hard_disk + project + r'experiment/lower_speed_mica_run1/info/colors/lower_speed_mica_run1_000094'
+run = r'experiment/higher_speed_mica_run1/info/colors'
+
+f_exp = hard_disk + '/' + project + '/' + run + '/' + r'higher_speed_mica_run1_000154'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
@@ -70,14 +72,26 @@ H_minima_vertical = HH[index_minima_vertical[:,0], index_minima_vertical[:,1]]
 R_minima = R_minima_horizontal
 H_minima = H_minima_horizontal
 
+index_minima_axisymmetric = np.array(argrelextrema(de_Lab[:,0], np.less)).T
+de_Lab_minima_axisymmetric = de_Lab[index_minima_axisymmetric,0]
+HH_minima_axisymmetric = HH[index_minima_axisymmetric,0]
+RR_minima_axisymmetric = RR[index_minima_axisymmetric,0]
+
 plt.close()
 f = plt.figure(1, figsize=(6,6))
 ax = plt.subplot(1,1,1)
 ax.pcolormesh(RR,HH,de_Lab, cmap='gray')
+ax.scatter(RR_minima_axisymmetric, HH_minima_axisymmetric, marker='o', color='red')
 ax.set_xlabel(r'r $[mm]$')
 ax.set_ylabel(r'h $[\mu m]$')
 ax.set_xlim(0, max(r_exp_mm))
 ax.set_ylim(0, max(h_ref_microns))
+
+# ax_other = plt.subplot(1,2,2)
+# ax_other.plot(de_Lab[:,0], HH[:,0], linestyle='-', color='black')
+# ax_other.scatter(de_Lab_minima_axisymmetric, HH_minima_axisymmetric, marker='o', color='red')
+# ax_other.set_ylim(0, max(h_ref_microns))
+
 f.tight_layout()
 plt.show(block=False)
 
