@@ -576,7 +576,7 @@ def calculate_path_minimum_profile(de_Lab, start_location, end_location, r_exp_m
     r_end_index = np.array(np.where(r_exp_mm == end_location[0]))
     h_end_index = np.array(np.where(h_ref_microns == end_location[1]))
 
-    indices, weight = route_through_array(de_Lab, [h_start_index, r_start_index], [h_end_index, r_end_index], fully_connected=True, geometric=False)
+    indices, weight = route_through_array(de_Lab, [h_start_index, r_start_index], [h_end_index, r_end_index], fully_connected=True, geometric=True)
     indices1 = np.asarray(indices)
 
     r_path = RR[indices1[:,0],indices1[:,1]]

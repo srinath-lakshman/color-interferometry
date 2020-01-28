@@ -17,9 +17,9 @@ os.chdir(f_ref)
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-run = r'experiment/higher_speed_mica_run1/info/colors'
+run = r'experiment/lower_speed_mica_run1/info/colors'
 
-f_exp = hard_disk + '/' + project + '/' + run + '/' + r'higher_speed_mica_run1_000154'
+f_exp = hard_disk + '/' + project + '/' + run + '/' + r'lower_speed_mica_run1_000101'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()

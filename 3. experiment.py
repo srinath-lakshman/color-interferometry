@@ -57,17 +57,17 @@ px_microns = 2.688
 
 ################################################################################
 
-run = r'higher_speed_mica_run1'
+run = r'lower_speed_mica_run1'
 os.chdir(f + '/' + run)
 
 ################################################################################
 
 # Center information
-image_filename              = r'higher_speed_mica_run1_000144.tif'
-approximate_center          = [409, 227]
-approximate_crop            = 110
-approximate_threshold       = +75
-approximate_radii           = [70,90]
+image_filename              = r'lower_speed_mica_run1_000109.tif'
+approximate_center          = [381, 385]
+approximate_crop            = 75
+approximate_threshold       = +100
+approximate_radii           = [49, 72]
 
 center, radius, radius_max = experiment_circlefit(\
                                 image_filename  = image_filename, \
@@ -121,9 +121,9 @@ np.savetxt("channel_R.txt", channel_R, fmt='%d')
 np.savetxt("channel_G.txt", channel_G, fmt='%d')
 np.savetxt("channel_B.txt", channel_B, fmt='%d')
 
-radius_max = 500
+# radius_max = 500
 
-r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(270-5, 270+5, center, radius_max, px_microns)
+r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(270-5, 270+5, center, px_microns)
 
 experiment_savefile(image_filename, r_mm, ref_colors, rgb_colors, px_microns, image_axi)
 

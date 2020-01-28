@@ -146,6 +146,8 @@ def experiment_circlefit(image_filename='', center=[0,0], crop=0, threshold=0, r
     ax5.imshow(binary, cmap='gray', extent=[-(crop+0.5),+(crop+0.5),-(crop+0.5),+(crop+0.5)])
     ax5.set_title('Binary Image')
     ax5.set_aspect('equal')
+    ax5.set_xlim(-crop, +crop)
+    ax5.set_ylim(-crop, +crop)
     ax5.set_xticks([])
     ax5.set_yticks([])
     plt.show(block=False)
@@ -172,14 +174,20 @@ def experiment_circlefit(image_filename='', center=[0,0], crop=0, threshold=0, r
     print('#################################\n')
 
     ax5.scatter(x_circle_center-crop, -(y_circle_center-crop), marker='x', color='red')
-    ax5.scatter(y_circle_perimeter-crop, -(x_circle_perimeter-crop), marker='.', color='red')
+    ax5.scatter(x_circle_perimeter-crop, -(y_circle_perimeter-crop), marker='.', color='red')
+
+    # plt.figure(2)
+    # plt.imshow(binary, cmap='gray')
+    # plt.scatter(x_circle_center, y_circle_center, marker='x', color='red')
+    # plt.scatter(x_circle_perimeter, y_circle_perimeter, marker='.', color='red')
+    # plt.show()
 
     delta_x = center[0] - crop
     delta_y = center[1] - crop
 
     ax6.imshow(gray, cmap='gray')
     ax6.scatter(x_circle_center+delta_x, y_circle_center+delta_y, marker='x', color='black')
-    ax6.scatter(y_circle_perimeter+delta_x, x_circle_perimeter+delta_y, marker='.', color='black')
+    ax6.scatter(x_circle_perimeter+delta_x, y_circle_perimeter+delta_y, marker='.', color='black')
 
     # plt.figure(2)
     # plt.subplot(1,2,1)
@@ -194,7 +202,7 @@ def experiment_circlefit(image_filename='', center=[0,0], crop=0, threshold=0, r
 
     center_px = [x_circle_center+delta_x, y_circle_center+delta_y]
     radius_px = hough_radii[ridx]
-    radius_max_px = int(round(min(center_px[0], center_px[1], x_res-1-center[0], y_res-1-center[1])))
+    radius_max_px = int(round(min(center_px[0], center_px[1], x_res-1-center_px[0], y_res-1-center_px[1])))
 
     print(f"center = {center_px}")
     print(f"radius = {radius_px}")
@@ -206,7 +214,7 @@ def experiment_circlefit(image_filename='', center=[0,0], crop=0, threshold=0, r
 
 ########################################
 
-def experiment_analysis(theta_start, theta_end, center, radius_px, px_microns):
+def experiment_analysis(theta_start, theta_end, center, px_microns):
 
     xc = center[0]
     yc = center[1]
@@ -223,7 +231,7 @@ def experiment_analysis(theta_start, theta_end, center, radius_px, px_microns):
     # delta_theta = round(math.degrees(math.atan(2.0/radius_px)),1)
     delta_theta = 0.1
     n = int((theta_end-theta_start)/delta_theta)
-    s = radius_px - 1
+    s = int(round(min(center[0], center[1], x_px-1-center[0], y_px-1-center[1])))
 
     r_microns = np.arange(0,s,1)*px_microns
     r_mm = r_microns/1000.0
@@ -235,6 +243,10 @@ def experiment_analysis(theta_start, theta_end, center, radius_px, px_microns):
         for j in range(s):
             xx = int(round(xc+(j*np.cos(np.deg2rad(-theta)))))
             yy = int(round(yc+(j*np.sin(np.deg2rad(-theta)))))
+            # if xx == x_px:
+            #     xx = x_px - 1
+            # if yy == y_px:
+            #     yy = y_px - 1
             output[i,j,0] = mod_image_e[yy,xx,0]
             output[i,j,1] = mod_image_e[yy,xx,1]
             output[i,j,2] = mod_image_e[yy,xx,2]
