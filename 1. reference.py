@@ -3,10 +3,11 @@ from FUNC import *
 
 ################################################################################
 
-hard_disk   = r'/media/devici/328C773C8C76F9A5/'
-project     = r'color_interferometry/bottom_view/20200114/'
+# hard_disk   = r'/media/devici/328C773C8C76F9A5/'
+hard_disk   = r'F:/'
+project     = r'color_interferometry/bottom_view/20200520/'
 
-f = hard_disk + project + r'reference'
+f = hard_disk + project + r'calibration'
 os.chdir(f)
 
 ################################################################################
@@ -16,7 +17,7 @@ reference_image_file = r'lens_focal_length_1000_mm_la1464.tif'
 
 reference_image = image_readfile(reference_image_file)
 
-px_microns = 1.385
+px_microns = 1.131
 # px_microns = length_analysis(reference_lengthscale_file)
 
 # center = [1022, 1026]
