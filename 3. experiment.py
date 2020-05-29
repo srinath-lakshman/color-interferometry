@@ -9,51 +9,51 @@ import numpy as np
 
 ################################################################################
 
-hard_disk   = r'/media/devici/328C773C8C76F9A5'
-project     = r'color_interferometry/bottom_view/20200114'
+hard_disk   = r'F:/'
+project     = r'color_interferometry/bottom_view/20200520/'
 
-f = hard_disk + '/' + project + '/' + r'experiment'
+f = hard_disk + project + r'experiment'
 os.chdir(f)
 
 ################################################################################
 
-# # Length scale information
-# image_filename  = r'mag_2x_dot_diameter_1_mm000001.tif'
-# approximate_center          = [344, 441]
-# approximate_crop            = 250
-# approximate_threshold       = -9000
-# approximate_radii           = [183,193]
-#
-# center, radius, radius_max = experiment_circlefit(\
-#                                 image_filename  = image_filename, \
-#                                 center          = approximate_center, \
-#                                 crop            = approximate_crop, \
-#                                 threshold       = approximate_threshold, \
-#                                 radii           = approximate_radii)
-#
-# lengthscale_diameter_mm = 1
-# lengthscale_diameter_px = 2 * radius
-# px_microns = round((lengthscale_diameter_mm*(10**3))/lengthscale_diameter_px,3)
-#
-# txt_file = open("circlefit_parameters.txt","w")
-# txt_file.write("INPUT:\n")
-# txt_file.write(f"image_filename = {image_filename}\n")
-# txt_file.write(f"approximate_center = {approximate_center}\n")
-# txt_file.write(f"approximate_crop = {approximate_crop}\n")
-# txt_file.write(f"approximate_threshold = {approximate_threshold}\n")
-# txt_file.write(f"approximate_radii = {approximate_radii}\n")
-# txt_file.write("\n")
-# txt_file.write("OUTPUT:\n")
-# txt_file.write(f"center = {center}\n")
-# txt_file.write(f"radius = {radius}\n")
-# txt_file.write(f"radius_max = {radius_max}\n")
-# txt_file.close()
-#
-# txt_file = open("px_microns.txt","w")
-# txt_file.write(f"1 pixel = {px_microns} microns")
-# txt_file.close()
+# Length scale information
+image_filename  = r'reference_lengthscale.tif'
+approximate_center          = [344, 441]
+approximate_crop            = 250
+approximate_threshold       = -9000
+approximate_radii           = [183,193]
 
-px_microns = 2.688
+center, radius, radius_max = experiment_circlefit(\
+                                image_filename  = image_filename, \
+                                center          = approximate_center, \
+                                crop            = approximate_crop, \
+                                threshold       = approximate_threshold, \
+                                radii           = approximate_radii)
+
+lengthscale_diameter_mm = 1
+lengthscale_diameter_px = 2 * radius
+px_microns = round((lengthscale_diameter_mm*(10**3))/lengthscale_diameter_px,3)
+
+txt_file = open("circlefit_parameters.txt","w")
+txt_file.write("INPUT:\n")
+txt_file.write(f"image_filename = {image_filename}\n")
+txt_file.write(f"approximate_center = {approximate_center}\n")
+txt_file.write(f"approximate_crop = {approximate_crop}\n")
+txt_file.write(f"approximate_threshold = {approximate_threshold}\n")
+txt_file.write(f"approximate_radii = {approximate_radii}\n")
+txt_file.write("\n")
+txt_file.write("OUTPUT:\n")
+txt_file.write(f"center = {center}\n")
+txt_file.write(f"radius = {radius}\n")
+txt_file.write(f"radius_max = {radius_max}\n")
+txt_file.close()
+
+txt_file = open("px_microns.txt","w")
+txt_file.write(f"1 pixel = {px_microns} microns")
+txt_file.close()
+
+# px_microns = 2.688
 
 ################################################################################
 

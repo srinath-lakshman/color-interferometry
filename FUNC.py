@@ -80,7 +80,10 @@ def length_analysis(lengthscale_file):
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
     diameter_pixels = int(2*hough_radii[ridx])
-    diameter_mm = input('Enter diameter value (in mm) = ')
+    print('\n')
+    # diameter_mm = input('Enter diameter value (in mm) = ')
+    diameter_mm = np.loadtxt('reference_lengthscale_mm.txt')
+    print('Diameter value (in mm) = ', diameter_mm)
 
     length_scale_mm = int(diameter_mm)
     length_pixels = int(diameter_pixels)
@@ -217,11 +220,11 @@ def find_center(image_v):
     ridx, r, c = np.unravel_index(np.argmax(hough_res), hough_res.shape)
     rr, cc = circle_perimeter(r,c,hough_radii[ridx])
 
-    # plt.close()
-    # plt.imshow(binary_mod, cmap='gray')
-    # plt.scatter(cc,rr)
-    # plt.scatter(c,r)
-    # plt.show()
+    plt.close()
+    plt.imshow(binary_mod, cmap='gray')
+    plt.scatter(cc,rr)
+    plt.scatter(c,r)
+    plt.show()
 
     xc, yc = c + left_top_corner[0], r + left_top_corner[1]
     cc, rr = cc + left_top_corner[0], rr + left_top_corner[1]
