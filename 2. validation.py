@@ -7,26 +7,27 @@ from scipy.signal import find_peaks
 
 ################################################################################
 
-hard_disk   = r'/media/devici/328C773C8C76F9A5/'
-project     = r'color_interferometry/bottom_view/20200114/'
+# hard_disk   = r'/media/devici/328C773C8C76F9A5/'
+hard_disk   = r'F:/'
+project     = r'color_interferometry/bottom_view/20200520/'
 
 ################################################################################
 
-fr = hard_disk + project + r'reference/info_f0400'
+fr = hard_disk + project + r'calibration/info_f0400'
 os.chdir(fr)
 
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 r_mm = range(n_ref)*px_ref_microns*(1/1000.0)
 
-f_rf0300 = hard_disk + project + r'reference/info_f0300'
+f_rf0300 = hard_disk + project + r'calibration/info_f0300'
 os.chdir(f_rf0300)
 
 n_ref_rf0300, sRGB_ref_rf0300, Lab_ref_rf0300, px_ref_microns_rf0300 = analysis_readme()
 h_ref_microns_rf0300 = np.loadtxt('h_microns.txt')
 r_mm_rf0300 = range(n_ref_rf0300)*px_ref_microns_rf0300*(1/1000.0)
 
-f_rf1000 = hard_disk + project + r'reference/info_f1000'
+f_rf1000 = hard_disk + project + r'calibration/info_f1000'
 os.chdir(f_rf1000)
 
 n_ref_rf1000, sRGB_ref_rf1000, Lab_ref_rf1000, px_ref_microns_rf1000 = analysis_readme()
@@ -100,10 +101,17 @@ indices1 = np.asarray(indices)
 r_path_minimum_rf1000 = RR_rf1000[indices1[:,0],indices1[:,1]]
 h_path_minimum_rf1000 = HH_rf1000[indices1[:,0],indices1[:,1]]
 
-r_path_minimum_binned_rf0300 = r_path_minimum_rf0300[0:1100].reshape(110, 10).mean(axis=1)
-h_path_minimum_binned_rf0300 = h_path_minimum_rf0300[0:1100].reshape(110, 10).mean(axis=1)
-r_path_minimum_binned_rf1000 = r_path_minimum_rf1000[0:1100].reshape(110, 10).mean(axis=1)
-h_path_minimum_binned_rf1000 = h_path_minimum_rf1000[0:1100].reshape(110, 10).mean(axis=1)
+# r_path_minimum_binned_rf0300 = r_path_minimum_rf0300[0:1100].reshape(110, 10).mean(axis=1)
+# h_path_minimum_binned_rf0300 = h_path_minimum_rf0300[0:1100].reshape(110, 10).mean(axis=1)
+# r_path_minimum_binned_rf1000 = r_path_minimum_rf1000[0:1100].reshape(110, 10).mean(axis=1)
+# h_path_minimum_binned_rf1000 = h_path_minimum_rf1000[0:1100].reshape(110, 10).mean(axis=1)
+
+r_path_minimum_binned_rf0300 = r_path_minimum_rf0300
+h_path_minimum_binned_rf0300 = h_path_minimum_rf0300
+r_path_minimum_binned_rf1000 = r_path_minimum_rf1000
+h_path_minimum_binned_rf1000 = h_path_minimum_rf1000
+
+fig, ax = plt.subplots(2,2,figsize=(20,20))
 
 plt.subplot(2,2,1)
 plt.pcolormesh(RR_rf0300, HH_rf0300, de_Lab_rf0300, cmap='gray')
@@ -120,16 +128,36 @@ plt.ylabel(r'h $[\mu m]$')
 plt.title('Minimum path algorithm')
 
 plt.subplot(2,2,3)
-plt.plot(r_mm_rf0300[0:cutoff_rf0300], h_ref_microns_rf0300[0:cutoff_rf0300], color='black')
+plt.plot(r_mm_rf0300[0:cutoff_rf0300], h_ref_microns_rf0300[0:cutoff_rf0300], color='red')
 plt.scatter(r_path_minimum_binned_rf0300, h_path_minimum_binned_rf0300, marker='o', facecolors='none', edgecolors='black')
 plt.xlabel('r [mm]')
 plt.ylabel(r'h $[\mu m]$')
 
 plt.subplot(2,2,4)
-plt.plot(r_mm_rf1000[0:n_ref_rf1000], h_ref_microns_rf1000[0:n_ref_rf1000], color='black')
+plt.plot(r_mm_rf1000[0:n_ref_rf1000], h_ref_microns_rf1000[0:n_ref_rf1000], color='red')
 plt.scatter(r_path_minimum_binned_rf1000, h_path_minimum_binned_rf1000, marker='o', facecolors='none', edgecolors='black')
 plt.xlabel('r [mm]')
 plt.ylabel(r'h $[\mu m]$')
+
+f = hard_disk + project + r'calibration'
+os.chdir(f)
+
+comparison_folder = os.getcwd() + '/comparison'
+if os.path.exists(comparison_folder):
+    print('\n**Comparison folder already exists**')
+else:
+    os.mkdir(comparison_folder)
+
+os.chdir(comparison_folder)
+
+np.savetxt("f0300_lens.txt", np.vstack((r_mm_rf0300[0:cutoff_rf0300],h_ref_microns_rf0300[0:cutoff_rf0300])), fmt='%f')
+np.savetxt("f0300_lens_calculated.txt", np.vstack((r_path_minimum_binned_rf0300, h_path_minimum_binned_rf0300)), fmt='%f')
+np.savetxt("f1000_lens.txt", np.vstack((r_mm_rf1000[0:n_ref_rf1000], h_ref_microns_rf1000[0:n_ref_rf1000])), fmt='%f')
+np.savetxt("f1000_lens_calculated.txt", np.vstack((r_path_minimum_binned_rf1000, h_path_minimum_binned_rf1000)), fmt='%f')
+
+fig.savefig('comparison.png', bbox_inches='tight')
+
+os.chdir('..')
 
 plt.show()
 
