@@ -17,57 +17,57 @@ os.chdir(f)
 
 ################################################################################
 
-# Length scale information
-image_filename  = r'reference_lengthscale.tif'
-approximate_center          = [344, 441]
-approximate_crop            = 250
-approximate_threshold       = -9000
-approximate_radii           = [183,193]
+# # Length scale information
+# image_filename  = r'reference_lengthscale.tif'
+# approximate_center          = [410, 359]
+# approximate_crop            = 200
+# approximate_threshold       = +10**4
+# approximate_radii           = [165,200]
+#
+# center, radius, radius_max = experiment_circlefit(\
+#                                 image_filename  = image_filename, \
+#                                 center          = approximate_center, \
+#                                 crop            = approximate_crop, \
+#                                 threshold       = approximate_threshold, \
+#                                 radii           = approximate_radii)
+#
+# lengthscale_diameter_mm = np.loadtxt('reference_lengthscale_mm.txt')
+# lengthscale_diameter_px = 2 * radius
+# px_microns = round((lengthscale_diameter_mm*(10**3))/lengthscale_diameter_px,3)
+#
+# txt_file = open("circlefit_parameters.txt","w")
+# txt_file.write("INPUT:\n")
+# txt_file.write(f"image_filename = {image_filename}\n")
+# txt_file.write(f"approximate_center = {approximate_center}\n")
+# txt_file.write(f"approximate_crop = {approximate_crop}\n")
+# txt_file.write(f"approximate_threshold = {approximate_threshold}\n")
+# txt_file.write(f"approximate_radii = {approximate_radii}\n")
+# txt_file.write("\n")
+# txt_file.write("OUTPUT:\n")
+# txt_file.write(f"center = {center}\n")
+# txt_file.write(f"radius = {radius}\n")
+# txt_file.write(f"radius_max = {radius_max}\n")
+# txt_file.close()
+#
+# txt_file = open("px_microns.txt","w")
+# txt_file.write(f"1 pixel = {px_microns} microns")
+# txt_file.close()
 
-center, radius, radius_max = experiment_circlefit(\
-                                image_filename  = image_filename, \
-                                center          = approximate_center, \
-                                crop            = approximate_crop, \
-                                threshold       = approximate_threshold, \
-                                radii           = approximate_radii)
-
-lengthscale_diameter_mm = 1
-lengthscale_diameter_px = 2 * radius
-px_microns = round((lengthscale_diameter_mm*(10**3))/lengthscale_diameter_px,3)
-
-txt_file = open("circlefit_parameters.txt","w")
-txt_file.write("INPUT:\n")
-txt_file.write(f"image_filename = {image_filename}\n")
-txt_file.write(f"approximate_center = {approximate_center}\n")
-txt_file.write(f"approximate_crop = {approximate_crop}\n")
-txt_file.write(f"approximate_threshold = {approximate_threshold}\n")
-txt_file.write(f"approximate_radii = {approximate_radii}\n")
-txt_file.write("\n")
-txt_file.write("OUTPUT:\n")
-txt_file.write(f"center = {center}\n")
-txt_file.write(f"radius = {radius}\n")
-txt_file.write(f"radius_max = {radius_max}\n")
-txt_file.close()
-
-txt_file = open("px_microns.txt","w")
-txt_file.write(f"1 pixel = {px_microns} microns")
-txt_file.close()
-
-# px_microns = 2.688
+px_microns = 2.778
 
 ################################################################################
 
-run = r'lower_speed_mica_run1'
+run = r'needle_tip_45_mm_from_surface/impact_on_100cst10mum_r1'
 os.chdir(f + '/' + run)
 
 ################################################################################
 
 # Center information
-image_filename              = r'lower_speed_mica_run1_000109.tif'
-approximate_center          = [381, 385]
-approximate_crop            = 75
-approximate_threshold       = +100
-approximate_radii           = [49, 72]
+image_filename              = r'impact_on_100cst10mum_r1_000119.tif'
+approximate_center          = [351, 384]
+approximate_crop            = 300
+approximate_threshold       = 250
+approximate_radii           = [160, 220]
 
 center, radius, radius_max = experiment_circlefit(\
                                 image_filename  = image_filename, \
@@ -123,7 +123,7 @@ np.savetxt("channel_B.txt", channel_B, fmt='%d')
 
 # radius_max = 500
 
-r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(270-5, 270+5, center, px_microns)
+r_mm, rgb_colors, ref_colors, image_axi = experiment_analysis(0, 360, center, px_microns)
 
 experiment_savefile(image_filename, r_mm, ref_colors, rgb_colors, px_microns, image_axi)
 

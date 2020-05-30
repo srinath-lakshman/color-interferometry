@@ -6,20 +6,20 @@ from scipy.spatial import distance
 
 ################################################################################
 
-hard_disk   = r'/media/devici/328C773C8C76F9A5'
-project     = r'color_interferometry/bottom_view/20200114'
+hard_disk   = r'F:/'
+project     = r'color_interferometry/bottom_view/20200520/'
 
 ################################################################################
 
-f_ref = hard_disk + '/' + project + '/' + r'reference/info_f0400'
+f_ref = hard_disk + project + r'calibration/info_f0400'
 os.chdir(f_ref)
 
 n_ref, sRGB_ref, Lab_ref, px_ref_microns = analysis_readme()
 h_ref_microns = np.loadtxt('h_microns.txt')
 
-run = r'experiment/lower_speed_mica_run1/info/colors'
+run = r'experiment/needle_tip_45_mm_from_surface/impact_on_100cst10mum_r1/info/colors/'
 
-f_exp = hard_disk + '/' + project + '/' + run + '/' + r'lower_speed_mica_run1_000101'
+f_exp = hard_disk + project + run + r'impact_on_100cst10mum_r1_000119'
 os.chdir(f_exp)
 
 n_exp, sRGB_exp, Lab_exp, px_exp_microns = analysis_readme()
@@ -55,6 +55,7 @@ for i in range(n_ref):
         de_RGB[i,j] = np.sqrt(((RGB_ref_ratio[0,i,0] - RGB_exp_ratio[0,j,0])**2) + ((RGB_ref_ratio[0,i,1] - RGB_exp_ratio[0,j,1])**2) + ((RGB_ref_ratio[0,i,2] - RGB_exp_ratio[0,j,2])**2))
         de_Lab[i,j] = np.sqrt(((Lab_ref[0,i,1] - Lab_exp[0,j,1])**2) + ((Lab_ref[0,i,2] - Lab_exp[0,j,2])**2))
 
+# de_Lab = de_RGB
 ################################################################################
 
 index_minima_horizontal = np.array(argrelextrema(de_Lab, np.less, axis=0)).T
@@ -78,7 +79,7 @@ HH_minima_axisymmetric = HH[index_minima_axisymmetric,0]
 RR_minima_axisymmetric = RR[index_minima_axisymmetric,0]
 
 plt.close()
-f = plt.figure(1, figsize=(6,6))
+f = plt.figure(1, figsize=(5,5))
 ax = plt.subplot(1,1,1)
 ax.pcolormesh(RR,HH,de_Lab, cmap='gray')
 ax.scatter(RR_minima_axisymmetric, HH_minima_axisymmetric, marker='o', color='red')
@@ -153,6 +154,17 @@ while char == 'y':
 os.chdir(f_exp)
 
 path_points = np.array(points)
+
+path_value = 0
+
+for i in range(np.shape(path_points)[0]):
+    r_index = np.array(np.where(r_exp_mm == path_points[i,0])[0])
+    h_index = np.array(np.where(h_ref_microns == path_points[i,1])[0])
+    path_value = path_value + de_Lab[h_index, r_index]
+
+print('path value = ', path_value)
+print('Average path value = ', path_value/np.shape(path_points)[0])
+
 profile_unfiltered = np.array([r_path, h_path]).T
 
 np.savetxt('path_points.txt', path_points, fmt='%0.6f')

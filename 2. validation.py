@@ -7,7 +7,6 @@ from scipy.signal import find_peaks
 
 ################################################################################
 
-# hard_disk   = r'/media/devici/328C773C8C76F9A5/'
 hard_disk   = r'F:/'
 project     = r'color_interferometry/bottom_view/20200520/'
 

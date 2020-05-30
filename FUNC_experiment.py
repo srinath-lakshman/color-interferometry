@@ -127,9 +127,9 @@ def experiment_circlefit(image_filename='', center=[0,0], crop=0, threshold=0, r
     print("Edge Sobel Image")
     print(f"[min,max] = [{min_val},{max_val}]")
 
-    binary = edge_sobel < int(threshold_otsu(edge_sobel))
-
     ax4.imshow(edge_sobel, cmap='gray', extent=[-(crop+0.5),+(crop+0.5),-(crop+0.5),+(crop+0.5)])
+
+    binary = edge_sobel < int(threshold_otsu(edge_sobel))
 
     ax5.imshow(binary, cmap='gray', extent=[-(crop+0.5),+(crop+0.5),-(crop+0.5),+(crop+0.5)])
     plt.show(block=False)
@@ -138,9 +138,9 @@ def experiment_circlefit(image_filename='', center=[0,0], crop=0, threshold=0, r
         threshold = int(input("Threshold = "))
 
     if threshold > 0:
-        binary = edge_sobel < abs(threshold)
-    else:
         binary = edge_sobel > abs(threshold)
+    else:
+        binary = edge_sobel < abs(threshold)
 
     ax5.cla()
     ax5.imshow(binary, cmap='gray', extent=[-(crop+0.5),+(crop+0.5),-(crop+0.5),+(crop+0.5)])
